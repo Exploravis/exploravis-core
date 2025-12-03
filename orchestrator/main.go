@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func IsAlive(url string, timeout time.Duration) bool {
@@ -24,6 +26,34 @@ func IsAlive(url string, timeout time.Duration) bool {
 
 }
 func main() {
+	seeds := []string{
+		"redpanda-0.redpanda.kafka.svc.cluster.local:9093",
+		// "redpanda-1.redpanda.kafka.svc.cluster.local:9093",
+		// "redpanda-2.redpanda.kafka.svc.cluster.local:9093",
+	}
+
+	cl, err := kgo.NewClient(
+		kgo.SeedBrokers(seeds...),
+		kgo.DialTimeout(5*time.Second),
+		kgo.ProduceRequestTimeout(5*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("unable to create client: %v", err)
+	}
+	defer cl.Close()
+
+	test_scan_req := []byte(`{"ip_range": "196.64.112.1/24", "ports": "80,443,21,22,23,53"}`)
+	record := &kgo.Record{
+		Topic: "ip_scan_request",
+		Value: test_scan_req,
+	}
+
+	if err := cl.ProduceSync(context.Background(), record).FirstErr(); err != nil {
+		log.Fatalf("produce error: %v", err)
+	}
+
+	log.Println("Message produced successfully")
+
 	if err := godotenv.Load(); err != nil {
 		log.Println("no .env file found")
 	}
