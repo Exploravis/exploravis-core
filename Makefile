@@ -9,6 +9,9 @@ orch:
 	cd orchestrator && go run main.go
 wrk:
 	cd worker && go run main.go
+
+grb:
+	cd worker/banner && go run main.go
 create-topics:
 	@for topic in $(TOPICS); do \
 	echo "Creating topic $$topic..."; \

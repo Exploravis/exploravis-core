@@ -42,7 +42,8 @@ func main() {
 	}
 	defer cl.Close()
 
-	test_scan_req := []byte(`{"ip_range": "196.64.112.1/24", "ports": "80,443,21,22,23,53"}`)
+	log.Println("Sending a test request in ip_scan_request topic")
+	test_scan_req := []byte(`{"ip_range": "192.168.1.1/24", "ports": "80,8080,443,22,23,21,20,53,554,8000,8888,8443,5000,37777"}`)
 	record := &kgo.Record{
 		Topic: "ip_scan_request",
 		Value: test_scan_req,

@@ -64,8 +64,8 @@ func buildOptions(req ScanRequest) *runner.Options {
 				return
 			}
 
-			ProduceResult(value)
 			fmt.Printf("[RESULT] %s -> %+v, ", hr.Host, hr.Ports)
+			ProduceResult(value)
 
 		},
 	}
