@@ -59,6 +59,8 @@ func main() {
 	for i := range workerCount {
 		go func(id int) {
 			for job := range jobQueue {
+
+				log.Println("go routine invoked for", job.IP)
 				if err := indexToES(bi, job); err != nil {
 					log.Printf("[worker %d] failed to index: %v", id, err)
 				}
@@ -71,7 +73,7 @@ func main() {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
 		kgo.ConsumeTopics("finished_scan"),
-		kgo.ConsumerGroup("es-worker-group"),
+		kgo.ConsumerGroup("es-worker-group-1"),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
 	if err != nil {
@@ -79,7 +81,7 @@ func main() {
 	}
 	defer cl.Close()
 
-	log.Println("Starting Redpanda consumer...")
+	log.Println("Redpanda consumer started...")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -93,6 +95,7 @@ func main() {
 		close(jobQueue)
 	}()
 
+	log.Println("Starting fetching loop")
 	for {
 		fetches := cl.PollFetches(ctx)
 		if errs := fetches.Errors(); len(errs) > 0 {
@@ -109,6 +112,7 @@ func main() {
 					log.Printf("invalid message: %v", err)
 					continue
 				}
+				log.Println("Fetched 1 message")
 				jobQueue <- result
 			}
 		})
@@ -116,6 +120,7 @@ func main() {
 }
 
 func indexToES(bi esutil.BulkIndexer, result ServiceScanResult) error {
+	log.Println("Indexing to Elasticsearch in bulk")
 	data, err := json.Marshal(result)
 	if err != nil {
 		return err

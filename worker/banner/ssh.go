@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -24,7 +25,7 @@ func scanSSH(t *zgrab2.ScanTarget) *ServiceScanResult {
 	}
 
 	sshInfo := map[string]any{
-		"banner":                ex.ProtocolVersion,
+		"version":               ex.ProtocolVersion,
 		"kex_algorithms":        ex.KEXAlgorithms,
 		"server_host_key_algos": ex.ServerHostKeyAlgos,
 		"enc_algos_c2s":         ex.EncAlgosC2S,
@@ -37,12 +38,24 @@ func scanSSH(t *zgrab2.ScanTarget) *ServiceScanResult {
 		"languages_s2c":         ex.LanguagesS2C,
 	}
 
+	// Unified Shodan‑style banner text
+	banner := fmt.Sprintf(
+		"SSH %s kex=%v hostkey=%v enc_c2s=%v enc_s2c=%v mac_c2s=%v mac_s2c=%v",
+		ex.ProtocolVersion,
+		ex.KEXAlgorithms,
+		ex.ServerHostKeyAlgos,
+		ex.EncAlgosC2S,
+		ex.EncAlgosS2C,
+		ex.MACAlgosC2S,
+		ex.MACAlgosS2C,
+	)
+
 	return &ServiceScanResult{
 		IP:        ipStr,
 		Port:      int(t.Port),
 		Protocol:  "SSH",
 		Timestamp: time.Now().Unix(),
 		SSH:       sshInfo,
-		RawTCP:    ex.ProtocolVersion,
+		Banner:    banner,
 	}
 }

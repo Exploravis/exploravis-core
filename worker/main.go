@@ -15,7 +15,7 @@ func main() {
 	workerCount := 8
 	jobQueue := make(chan scanner.ScanRequest, 2000)
 
-	// Start worker pool
+	// Start worker pooooool
 	for i := range workerCount {
 		go func(id int) {
 			for job := range jobQueue {

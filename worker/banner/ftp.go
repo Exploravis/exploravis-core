@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/zmap/zgrab2"
@@ -13,7 +14,6 @@ func scanFTP(t *zgrab2.ScanTarget) *ServiceScanResult {
 	log.Printf("Scanning target: %s:%d", t.IP.String(), t.Port)
 
 	var mod ftpmod.Module
-
 	flags := mod.NewFlags().(*ftpmod.Flags)
 	flags.Verbose = true
 	flags.FTPAuthTLS = false
@@ -41,24 +41,55 @@ func scanFTP(t *zgrab2.ScanTarget) *ServiceScanResult {
 	status, out, err := scanner.Scan(ctx, dialerGroup, t)
 	if err != nil {
 		log.Printf("FTP scan failed for %s:%d: %v", t.IP.String(), t.Port, err)
-		return nil
+		return &ServiceScanResult{
+			IP:       t.IP.String(),
+			Port:     int(t.Port),
+			Protocol: "FTP",
+			Meta:     map[string]any{"error": err.Error()},
+		}
 	}
+
 	if status != zgrab2.SCAN_SUCCESS {
 		log.Printf("FTP scan not successful for %s:%d (Status: %s)", t.IP.String(), t.Port, status)
-		return nil
+		return &ServiceScanResult{
+			IP:       t.IP.String(),
+			Port:     int(t.Port),
+			Protocol: "FTP",
+			Meta:     map[string]any{"status": status},
+		}
 	}
 
 	res, ok := out.(*ftpmod.ScanResults)
 	if !ok || res == nil {
 		log.Printf("FTP scan output invalid for %s:%d", t.IP.String(), t.Port)
-		return nil
+		return &ServiceScanResult{
+			IP:       t.IP.String(),
+			Port:     int(t.Port),
+			Protocol: "FTP",
+			Meta:     map[string]any{"error": "invalid scan output"},
+		}
 	}
 
+	// Compose unified banner (Shodan-style)
+	bannerParts := []string{}
+	if res.Banner != "" {
+		bannerParts = append(bannerParts, res.Banner)
+	}
+	if res.AuthTLSResp != "" {
+		bannerParts = append(bannerParts, res.AuthTLSResp)
+	}
+	if res.AuthSSLResp != "" {
+		bannerParts = append(bannerParts, res.AuthSSLResp)
+	}
+	unifiedBanner := sanitizeBanner([]byte(strings.Join(bannerParts, " | ")))
+
 	return &ServiceScanResult{
-		IP:       t.IP.String(),
-		Port:     int(t.Port),
-		Protocol: "FTP",
-		RawTCP:   res.Banner,
+		IP:        t.IP.String(),
+		Port:      int(t.Port),
+		Protocol:  "FTP",
+		Timestamp: time.Now().Unix(),
+		RawTCP:    res.Banner,
+		Banner:    unifiedBanner,
 		Meta: map[string]any{
 			"auth_tls_resp": res.AuthTLSResp,
 			"auth_ssl_resp": res.AuthSSLResp,

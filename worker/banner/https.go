@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zmap/zgrab2"
@@ -32,7 +34,6 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 	dialer := &net.Dialer{Timeout: dialTimeout}
 	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsCfg)
 	if err != nil {
-		log.Printf("tls dial failed for %s: %v", addr, err)
 		return &ServiceScanResult{
 			IP:       ipStr,
 			Port:     int(target.Port),
@@ -48,24 +49,40 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 	)
 
 	_ = conn.SetWriteDeadline(time.Now().Add(writeTimeout))
-	if _, err := conn.Write([]byte(req)); err != nil {
-		log.Printf("TLS write failed for %s: %v", addr, err)
-	}
+	_, _ = conn.Write([]byte(req))
 
 	_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
 	raw, _ := io.ReadAll(io.LimitReader(conn, maxRead))
-
 	if len(raw) > maxStore {
 		raw = raw[:maxStore]
 	}
-	body := string(raw)
 
+	// -------------------------
+	// Parse HTTP response
+	// -------------------------
+	statusLine, headers, body := parseHTTPResponse(raw)
+
+	// -------------------------
+	// Extract HTML title
+	// -------------------------
+	title := extractTitle(body)
+
+	// -------------------------
+	// Body hash
+	// -------------------------
+	h := sha256.Sum256([]byte(body))
+	bodyHash := "sha256:" + hex.EncodeToString(h[:])
+
+	// -------------------------
+	// TLS Metadata
+	// -------------------------
 	state := conn.ConnectionState()
 	tlsInfo := map[string]any{
 		"version":             tlsVersionString(state.Version),
 		"cipher_suite":        tls.CipherSuiteName(state.CipherSuite),
 		"handshake_ok":        state.HandshakeComplete,
 		"negotiated_protocol": state.NegotiatedProtocol,
+		"alpn":                state.NegotiatedProtocol,
 	}
 
 	if len(state.PeerCertificates) > 0 {
@@ -74,7 +91,6 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 			"subject":    c.Subject.String(),
 			"issuer":     c.Issuer.String(),
 			"dns_names":  c.DNSNames,
-			"email":      c.EmailAddresses,
 			"serial":     c.SerialNumber.String(),
 			"not_before": c.NotBefore,
 			"not_after":  c.NotAfter,
@@ -83,18 +99,33 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 		}
 	}
 
-	httpMap := map[string]any{}
-	if len(raw) > 0 {
-		var statusLine string
-		if idx := indexOfCRLF(raw); idx > 0 {
-			statusLine = string(raw[:idx])
-		} else {
-			limit := min(len(raw), 128)
-			statusLine = string(raw[:limit])
-		}
+	// -------------------------
+	// Build banner
+	// -------------------------
+	var banner strings.Builder
+	banner.WriteString(fmt.Sprintf("TLS: %s %s\n",
+		tlsInfo["version"], tlsInfo["cipher_suite"]))
 
-		httpMap["status_line"] = statusLine
-		httpMap["body_snippet"] = body
+	if statusLine != "" {
+		banner.WriteString(statusLine + "\n")
+	}
+
+	for k, v := range headers {
+		banner.WriteString(k + ": " + v + "\n")
+	}
+
+	banner.WriteString(body)
+
+	// -------------------------
+	// Structured HTTP object
+	// -------------------------
+	httpInfo := map[string]any{
+		"status_line":  statusLine,
+		"headers":      headers,
+		"title":        title,
+		"body_len":     len(body),
+		"body_preview": body,
+		"body_hash":    bodyHash,
 	}
 
 	return &ServiceScanResult{
@@ -103,18 +134,51 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 		Protocol:  "HTTPS",
 		Timestamp: time.Now().Unix(),
 		TLS:       tlsInfo,
-		HTTP:      httpMap,
-		Banner:    body,
+		HTTP:      httpInfo,
+		Banner:    banner.String(),
 	}
 }
 
-func indexOfCRLF(b []byte) int {
-	for i := 0; i+1 < len(b); i++ {
-		if b[i] == '\r' && b[i+1] == '\n' {
-			return i
-		}
+func parseHTTPResponse(raw []byte) (string, map[string]string, string) {
+	s := string(raw)
+
+	parts := strings.SplitN(s, "\r\n\r\n", 2)
+	head := parts[0]
+	body := ""
+	if len(parts) > 1 {
+		body = parts[1]
 	}
-	return -1
+
+	lines := strings.Split(head, "\r\n")
+	if len(lines) == 0 {
+		return "", map[string]string{}, body
+	}
+
+	statusLine := lines[0]
+	headers := make(map[string]string)
+
+	for _, l := range lines[1:] {
+		if !strings.Contains(l, ":") {
+			continue
+		}
+		key, val, _ := strings.Cut(l, ":")
+		headers[strings.ToLower(strings.TrimSpace(key))] = strings.TrimSpace(val)
+	}
+
+	return statusLine, headers, body
+}
+
+func extractTitle(body string) string {
+	low := strings.ToLower(body)
+	i := strings.Index(low, "<title>")
+	if i == -1 {
+		return ""
+	}
+	j := strings.Index(low[i:], "</title>")
+	if j == -1 {
+		return ""
+	}
+	return strings.TrimSpace(body[i+7 : i+j])
 }
 
 func tlsVersionString(v uint16) string {

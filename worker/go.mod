@@ -5,6 +5,15 @@ go 1.24.0
 toolchain go1.24.10
 
 require (
+	github.com/adedayo/sshscan v0.1.4
+	github.com/elastic/go-elasticsearch/v8 v8.19.0
+	github.com/projectdiscovery/goflags v0.1.74
+	github.com/projectdiscovery/naabu/v2 v2.3.7
+	github.com/twmb/franz-go v1.20.5
+	github.com/zmap/zgrab2 v0.2.0
+)
+
+require (
 	aead.dev/minisign v0.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Mzack9999/gcache v0.0.0-20230410081825-519e28eab057 // indirect
@@ -12,7 +21,6 @@ require (
 	github.com/STARRY-S/zip v0.2.1 // indirect
 	github.com/Ullaakut/nmap/v3 v3.0.6 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/adedayo/sshscan v0.1.4 // indirect
 	github.com/akrylysov/pogreb v0.10.1 // indirect
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
@@ -36,7 +44,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
-	github.com/elastic/go-elasticsearch/v8 v8.19.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/gaissmai/bart v0.26.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -52,7 +59,6 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
@@ -82,13 +88,11 @@ require (
 	github.com/projectdiscovery/dnsx v1.2.2 // indirect
 	github.com/projectdiscovery/fastdialer v0.4.16 // indirect
 	github.com/projectdiscovery/freeport v0.0.7 // indirect
-	github.com/projectdiscovery/goflags v0.1.74 // indirect
 	github.com/projectdiscovery/gologger v1.1.60 // indirect
 	github.com/projectdiscovery/hmap v0.0.95 // indirect
 	github.com/projectdiscovery/ipranger v0.0.53 // indirect
 	github.com/projectdiscovery/machineid v0.0.0-20240226150047-2e2c51e35983 // indirect
 	github.com/projectdiscovery/mapcidr v1.1.97 // indirect
-	github.com/projectdiscovery/naabu/v2 v2.3.7 // indirect
 	github.com/projectdiscovery/networkpolicy v0.1.28 // indirect
 	github.com/projectdiscovery/ratelimit v0.0.82 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.108 // indirect
@@ -119,7 +123,6 @@ require (
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	github.com/twmb/franz-go v1.20.5 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/weppos/publicsuffix-go v0.40.3-0.20250408071509-6074bbe7fd39 // indirect
@@ -128,10 +131,8 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.3 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zcalusic/sysinfo v1.0.2 // indirect
-	github.com/zmap/rc2 v0.0.0-20190804163417-abaa70531248 // indirect
 	github.com/zmap/zcrypto v0.0.0-20250324021606-4f0ea0eaccac // indirect
 	github.com/zmap/zflags v1.4.0-beta.1.0.20200204220219-9d95409821b6 // indirect
-	github.com/zmap/zgrab2 v0.2.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect

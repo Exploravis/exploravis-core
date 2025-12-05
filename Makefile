@@ -6,12 +6,16 @@ install-telepresence:
 connect: 
 	telepresence quit && telepresence connect 
 orch:
-	cd orchestrator && go run main.go
+	cd orchestrator && go run . 
 wrk:
 	cd worker && go run main.go
 
 grb:
-	cd worker/banner && go run main.go
+	cd worker/banner && go run . 
+
+elastic:
+	cd worker/elasticsearch-worker && go run . 
+
 create-topics:
 	@for topic in $(TOPICS); do \
 	echo "Creating topic $$topic..."; \
