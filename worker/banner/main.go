@@ -19,9 +19,10 @@ func grabBanner(s ServiceScanRequest) ServiceScanResult {
 	portNum, err := strconv.Atoi(s.Port)
 	if err != nil {
 		return ServiceScanResult{
-			IP:   s.IP,
-			Port: 0,
-			Meta: map[string]any{"error": "invalid port"},
+			IP:     s.IP,
+			ScanID: s.ScanID,
+			Port:   0,
+			Meta:   map[string]any{"error": "invalid port"},
 		}
 	}
 
@@ -32,9 +33,10 @@ func grabBanner(s ServiceScanRequest) ServiceScanResult {
 
 	if target.IP == nil {
 		return ServiceScanResult{
-			IP:   s.IP,
-			Port: portNum,
-			Meta: map[string]any{"error": "invalid IP format"},
+			IP:     s.IP,
+			ScanID: s.ScanID,
+			Port:   portNum,
+			Meta:   map[string]any{"error": "invalid IP format"},
 		}
 	}
 
@@ -63,12 +65,14 @@ func grabBanner(s ServiceScanRequest) ServiceScanResult {
 	// this shouldn't happen
 	if result == nil {
 		return ServiceScanResult{
-			IP:   s.IP,
-			Port: portNum,
-			Meta: map[string]any{"error": "scan failed or timed out"},
+			IP:     s.IP,
+			ScanID: s.ScanID,
+			Port:   portNum,
+			Meta:   map[string]any{"error": "scan failed or timed out"},
 		}
 	}
 
+	result.ScanID = s.ScanID
 	b, err := json.MarshalIndent(result, "", " ")
 	if err != nil {
 		log.Println("marshal error:", err)
@@ -146,8 +150,9 @@ func main() {
 				}
 				for _, portStr := range strings.Split(req.Ports, ",") {
 					jobQueue <- ServiceScanRequest{
-						IP:   req.IP,
-						Port: portStr,
+						ScanID: req.ScanID,
+						IP:     req.IP,
+						Port:   portStr,
 					}
 				}
 

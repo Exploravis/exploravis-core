@@ -1,4 +1,4 @@
-TOPICS := ip_scan_request scan_enrichment_request finished_scan ip_scan_result
+TOPICS := ip_scan_request scan_enrichment_request finished_scan ip_scan_result not_enriched_finished_scan
 .PHONY: create-topics
 
 install-telepresence:
@@ -12,6 +12,9 @@ wrk:
 
 grb:
 	cd worker/banner && go run . 
+
+meta:
+	cd worker/enrich-meta && go run . 
 
 elastic:
 	cd worker/elasticsearch-worker && go run . 

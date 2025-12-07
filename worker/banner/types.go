@@ -1,18 +1,20 @@
 package main
 
 type PortsScanRequest struct {
-	IP    string `json:"host"`
-	Ports string `json:"ports"`
-	Time  int64  `json:"timestamp"`
+	ScanID string `json:"scan_id"`
+	IP     string `json:"host"`
+	Ports  string `json:"ports"`
+	Time   int64  `json:"timestamp"`
 }
 
 type ServiceScanRequest struct {
-	IP   string
-	Port string
+	ScanID string
+	IP     string
+	Port   string
 }
 
 type ServiceScanResult struct {
-	ScanID    string         `json:"scan_id,omitempty"`
+	ScanID    string         `json:"scan_id"`
 	IP        string         `json:"ip"`
 	Port      int            `json:"port"`
 	Timestamp int64          `json:"timestamp"`

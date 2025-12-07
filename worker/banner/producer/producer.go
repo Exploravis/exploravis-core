@@ -15,7 +15,7 @@ func InitProducer(brokers []string) {
 		kgo.SeedBrokers(brokers...),
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
-		kgo.DefaultProduceTopic("finished_scan"),
+		kgo.DefaultProduceTopic("not_enriched_finished_scan"),
 	)
 	if err != nil {
 		log.Fatalf("failed to create results producer: %v", err)

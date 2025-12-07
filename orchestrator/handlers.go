@@ -6,10 +6,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type ScanRequest struct {
+	ScanID  string `json:"scan_id"`
 	IPRange string `json:"ip_range"`
 	Ports   string `json:"ports"`
 }
@@ -21,8 +24,6 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-
-		log.Println("Method:", r.Method)
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -41,9 +42,19 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 			return
 		}
 
-		produceScanRequest(kafka, body)
+		// Generate scan_id
+		req.ScanID = uuid.NewString()
+
+		// rematshel again
+		msgBytes, err := json.Marshal(req)
+		if err != nil {
+			http.Error(w, "failed to marshal scan request", 500)
+			return
+		}
+
+		produceScanRequest(kafka, msgBytes)
 
 		w.WriteHeader(202)
-		w.Write([]byte(`{"status":"queued"}`))
+		w.Write([]byte(`{"status":"queued","scan_id":"` + req.ScanID + `"}`))
 	})
 }

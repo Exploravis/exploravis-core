@@ -16,14 +16,16 @@ import (
 )
 
 type ScanRequest struct {
-	Cidr  string `json:"ip_range"`
-	Ports string `json:"ports"`
+	ScanID string `json:"scan_id"`
+	Cidr   string `json:"ip_range"`
+	Ports  string `json:"ports"`
 }
 
 type ScanResult struct {
-	Host  string `json:"host"`
-	Ports string `json:"ports"`
-	Time  int64  `json:"timestamp"`
+	ScanID string `json:"scan_id"`
+	Host   string `json:"host"`
+	Ports  string `json:"ports"`
+	Time   int64  `json:"timestamp"`
 }
 
 func portsToString(ports []*port.Port) string {
@@ -52,10 +54,12 @@ func buildOptions(req ScanRequest) *runner.Options {
 		Threads:           50,
 		Stream:            true,
 		OnResult: func(hr *result.HostResult) {
+			println("OS FINGERPRINT:", hr.OS)
 			msg := ScanResult{
-				Host:  hr.Host,
-				Ports: portsToString(hr.Ports),
-				Time:  time.Now().Unix(),
+				ScanID: req.ScanID,
+				Host:   hr.Host,
+				Ports:  portsToString(hr.Ports),
+				Time:   time.Now().Unix(),
 			}
 
 			value, err := json.Marshal(msg)

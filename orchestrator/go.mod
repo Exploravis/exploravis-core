@@ -10,6 +10,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.19.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect

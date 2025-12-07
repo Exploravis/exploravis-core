@@ -19,8 +19,8 @@ type ServiceScanResult struct {
 	IP        string         `json:"ip"`
 	Port      int            `json:"port"`
 	Timestamp int64          `json:"timestamp"`
-	Protocol  string         `json:"protocol"`
 	Service   string         `json:"service,omitempty"`
+	Protocol  string         `json:"protocol"`
 	Banner    string         `json:"banner,omitempty"`
 	TLS       map[string]any `json:"tls,omitempty"`
 	HTTP      map[string]any `json:"http,omitempty"`
