@@ -87,6 +87,38 @@ interface ScanCardProps {
 function getServiceInfo(port: number) {
   throw new Error("Function not implemented.");
 }
+import type { JSX } from "react";
+import { Terminal, ShieldAlert, ServerCog, ShieldCheck } from "lucide-react";
+
+export const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+export const getRiskLevel = (port: number): { level: string; color: string; icon: JSX.Element } => {
+  const riskyPorts: Record<number, { level: string; color: string; icon: JSX.Element }> = {
+    22: { level: "SSH", color: "text-orange-500", icon: <Terminal size={12} /> },
+    23: { level: "Telnet", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    21: { level: "FTP", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    3389: { level: "RDP", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    5900: { level: "VNC", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    445: { level: "SMB", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    1433: { level: "MSSQL", color: "text-red-500", icon: <ShieldAlert size={12} /> },
+    3306: { level: "MySQL", color: "text-orange-500", icon: <ShieldAlert size={12} /> },
+    5432: { level: "Postgres", color: "text-orange-500", icon: <ShieldAlert size={12} /> },
+    6379: { level: "Redis", color: "text-orange-500", icon: <ShieldAlert size={12} /> },
+    27017: { level: "MongoDB", color: "text-orange-500", icon: <ShieldAlert size={12} /> },
+  };
+
+  if (port in riskyPorts) return riskyPorts[port];
+
+  if (port < 1024) return { level: "System", color: "text-blue-500", icon: <ServerCog size={12} /> };
+
+  return { level: "Normal", color: "text-green-500", icon: <ShieldCheck size={12} /> };
+};
 
 export {
   HighlightedText,
@@ -97,3 +129,4 @@ export {
   SERVICE_COLORS,
   ScanCardProps
 };
+

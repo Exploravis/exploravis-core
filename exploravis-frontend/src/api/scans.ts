@@ -98,3 +98,31 @@ export const fetchScans = async (
     aggs: res.data.aggs ?? null,
   };
 };
+
+
+export const fetchScanResults = async (
+  scanId: string,
+  query = "",
+  page = 1,
+  pageSize = 20,
+  protocol?: string,
+  port?: number
+) => {
+  const params: any = {
+    q: query,
+    size: pageSize,
+    from: (page - 1) * pageSize,
+  };
+
+  if (protocol) params.protocol = protocol;
+  if (port) params.port = port;
+  params.scan_id = scanId;
+
+  const res = await axios.get(`${API_URL}/scans`, { params });
+
+  return {
+    results: res.data.results ?? [],
+    total: res.data.total ?? 0,
+    aggs: res.data.aggs ?? null,
+  };
+};

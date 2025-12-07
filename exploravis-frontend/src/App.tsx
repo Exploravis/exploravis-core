@@ -5,6 +5,7 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import ScanSearch from "./pages/ScanSearch";
 import IPPage from "./pages/IPPage";
+import ScanIdSearch from "./pages/ScanIdSearch";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -13,6 +14,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/scans" element={<ScanSearch />} />
+        <Route path="/scans/:scan_id" element={<ScanIdSearch />} />
         <Route path="/ip/:ip" element={<IPPage />} />
         <Route
           path="/"

@@ -74,6 +74,11 @@ func buildESQuery(params map[string][]string) map[string]any {
 	// ------------------------
 	// Simple field filters
 	// ------------------------
+	if v := params["scan_id"]; len(v) > 0 {
+		boolFilter = append(boolFilter, map[string]any{
+			"terms": map[string]any{"scan_id.keyword": v},
+		})
+	}
 	if v := params["ip"]; len(v) > 0 {
 		boolFilter = append(boolFilter, map[string]any{"terms": map[string]any{"ip.keyword": v}})
 	}

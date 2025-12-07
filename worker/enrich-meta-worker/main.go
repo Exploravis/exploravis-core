@@ -14,7 +14,7 @@ import (
 	"github.com/oschwald/geoip2-golang"
 	"github.com/twmb/franz-go/pkg/kgo"
 
-	"github.com/exploravis/worker/enrich-meta/producer"
+	"github.com/exploravis/worker/enrich-meta-worker/producer"
 )
 
 type ServiceScanResult struct {
