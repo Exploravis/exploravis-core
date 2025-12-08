@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  namespace: exploravis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    metadata:
+      labels:
+        app: orchestrator
+    spec:
+      containers:
+      - name: orchestrator
+        image: ghcr.io/exploravis/orchestrator:latest
+        ports:
+        - containerPort: 8088
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator
+  namespace: exploravis
+spec:
+  type: ClusterIP
+  selector:
+    app: orchestrator
+  ports:
+  - port: 8088
+    targetPort: 8088
+    name: http

@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banner-worker
+  namespace: exploravis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: banner-worker
+  template:
+    metadata:
+      labels:
+        app: banner-worker
+    spec:
+      containers:
+      - name: banner-worker
+        image: ghcr.io/exploravis/banner-worker:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

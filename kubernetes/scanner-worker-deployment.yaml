@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-worker
+  namespace: exploravis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scanner-worker
+  template:
+    metadata:
+      labels:
+        app: scanner-worker
+    spec:
+      containers:
+      - name: scanner-worker
+        image: ghcr.io/exploravis/scanner-worker:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

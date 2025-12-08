@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enrichment-stack
+  namespace: exploravis
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: enrichment-stack
+  template:
+    metadata:
+      labels:
+        app: enrichment-stack
+    spec:
+      containers:
+      - name: enrich-meta-worker
+        image: ghcr.io/exploravis/enrich-meta-worker:latest
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+
+      - name: elasticsearch-worker
+        image: ghcr.io/exploravis/elasticsearch-worker:latest
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"

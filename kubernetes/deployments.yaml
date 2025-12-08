@@ -1,23 +1,23 @@
-apiVersion: v1
-kind: Pod
-metadata:
-  name: orchestrator
-  namespace: exploravis 
-spec:
-  containers:
-  - name: orchestrator 
-    image: ghcr.io/exploravis/orchestrator:latest
-    ports:
-    - containerPort: 8080
-
-  - name: scanner-worker 
-    image: ghcr.io/exploravis/scanner-worker:latest
-
-  - name: banner-worker 
-    image: ghcr.io/exploravis/banner-worker:latest
-
-  - name: elasticsearch-worker 
-    image: ghcr.io/exploravis/elasticsearch-worker:latest
-
-  - name: enrich-meta-worker 
-    image: ghcr.io/exploravis/enrich-meta-worker:latest
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: orchestrator
+#   namespace: exploravis 
+# spec:
+#   containers:
+#   - name: orchestrator 
+#     image: ghcr.io/exploravis/orchestrator:latest
+#     ports:
+#     - containerPort: 8080
+#
+#   - name: scanner-worker 
+#     image: ghcr.io/exploravis/scanner-worker:latest
+#
+#   - name: banner-worker 
+#     image: ghcr.io/exploravis/banner-worker:latest
+#
+#   - name: elasticsearch-worker 
+#     image: ghcr.io/exploravis/elasticsearch-worker:latest
+#
+#   - name: enrich-meta-worker 
+#     image: ghcr.io/exploravis/enrich-meta-worker:latest
