@@ -42,10 +42,10 @@ jobs:
           context: ./orchestrator
           push: true
           tags: |
-            ${{ github.repository_owner }}/orchestrator:latest
-            ghcr.io/${{ github.repository_owner }}/orchestrator:latest
-            ${{ github.repository_owner }}/orchestrator:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/orchestrator:${{ github.sha }}
+            ${{ github.repository_owner | lower }}/orchestrator:latest
+            ghcr.io/${{ github.repository_owner | lower }}/orchestrator:latest
+            ${{ github.repository_owner | lower}}/orchestrator:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner | lower}}/orchestrator:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.updated_at }}
@@ -59,10 +59,10 @@ jobs:
           file: ./worker/scanner-worker/Dockerfile
           push: true
           tags: |
-            ${{ github.repository_owner }}/scanner-worker:latest
-            ghcr.io/${{ github.repository_owner }}/scanner-worker:latest
-            ${{ github.repository_owner }}/scanner-worker:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/scanner-worker:${{ github.sha }}
+            ${{ github.repository_owner | lower }}/scanner-worker:latest
+            ghcr.io/${{ github.repository_owner | lower }}/scanner-worker:latest
+            ${{ github.repository_owner | lower }}/scanner-worker:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner | lower }}/scanner-worker:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.updated_at }}
