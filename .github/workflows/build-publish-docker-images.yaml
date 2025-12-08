@@ -57,10 +57,56 @@ jobs:
           file: ./worker/scanner-worker/Dockerfile
           push: true
           tags: |
-            ghcr.io/exploravis/orchestrator:latest
-            ghcr.io/exploravis/orchestrator:${{ github.sha }}
+            ghcr.io/exploravis/scanner-worker:latest
+            ghcr.io/exploravis/scanner-worker:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ github.event.repository.updated_at }}
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and Push banner-worker 
+        uses: docker/build-push-action@v5
+        with:
+          context: ./worker
+          file: ./worker/banner-worker/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/exploravis/banner-worker:latest
+            ghcr.io/exploravis/banner-worker:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and Push elasticsearch-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./worker
+          file: ./worker/elasticsearch-worker/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/exploravis/elasticsearch-worker:latest
+            ghcr.io/exploravis/elasticsearch-worker:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and Push enrich-meta-worker 
+        uses: docker/build-push-action@v5
+        with:
+          context: ./worker
+          file: ./worker/enrich-meta-worker/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/exploravis/enrich-meta-worker:latest
+            ghcr.io/exploravis/enrich-meta-worker:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.revision=${{ github.sha }}
+
