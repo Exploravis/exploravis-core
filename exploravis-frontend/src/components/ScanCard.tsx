@@ -20,10 +20,10 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import type { Scan } from "../api/scans";
 import { Link } from "react-router-dom";
-import { HighlightedText, countryFlag, getServiceName, getServiceColor, ScanCardProps, Text, Paragraph, Title } from "./ScanCard.helpers";
+import { HighlightedText, countryFlag, getServiceName, getServiceColor, ScanCardProps, Paragraph } from "./ScanCard.helpers";
 
 dayjs.extend(relativeTime);
-const { Text, Paragraph, Title } = Typography;
+const { Text, Title } = Typography;
 
 export default function ScanCard({
   scan,

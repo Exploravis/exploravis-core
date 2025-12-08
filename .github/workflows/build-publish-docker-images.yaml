@@ -110,3 +110,20 @@ jobs:
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.revision=${{ github.sha }}
 
+
+      - name: Build and Push exploravis-ui 
+        # I HATE FORNTEND, pls help
+        uses: docker/build-push-action@v5
+        with:
+          context: ./exploravis-frontend
+          file: ./exploravis-frontend/Dockerfile 
+          push: true
+          tags: |
+            ghcr.io/exploravis/exploravis-ui:latest
+            ghcr.io/exploravis/exploravis-ui:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.revision=${{ github.sha }}
+

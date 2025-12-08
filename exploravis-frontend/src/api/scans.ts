@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "http://orchestrator:8080";
 
 export type IPScansResponse = {
   ip: string;
