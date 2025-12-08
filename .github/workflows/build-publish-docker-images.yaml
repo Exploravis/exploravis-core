@@ -33,7 +33,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner}}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push API Server 
@@ -42,9 +42,7 @@ jobs:
           context: ./orchestrator
           push: true
           tags: |
-            exploravis/orchestrator:latest
             ghcr.io/exploravis/orchestrator:latest
-            exploravis/orchestrator:${{ github.sha }}
             ghcr.io/exploravis/orchestrator:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
@@ -59,9 +57,7 @@ jobs:
           file: ./worker/scanner-worker/Dockerfile
           push: true
           tags: |
-            exploravis/orchestrator:latest
             ghcr.io/exploravis/orchestrator:latest
-            exploravis/orchestrator:${{ github.sha }}
             ghcr.io/exploravis/orchestrator:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
