@@ -13,9 +13,8 @@ func newKafkaClient() *kgo.Client {
 	broker := os.Getenv("KAFKA_BROKER")
 	log.Println("Kafka broker:", broker)
 	if broker == "" {
-		log.Fatal("KAFKA_BROKER not set")
+		broker = "redpanda-0.redpanda.kafka.svc.cluster.local:9093"
 	}
-
 	log.Println("Connecting to kafka broker...")
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(broker),

@@ -79,7 +79,7 @@ require (
 	github.com/muesli/termenv v0.15.3-0.20240618155329-98d742f6907a // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
-	github.com/oschwald/geoip2-golang v1.13.0 // indirect
+	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -89,17 +89,17 @@ require (
 	github.com/projectdiscovery/cdncheck v1.2.10 // indirect
 	github.com/projectdiscovery/clistats v0.1.1 // indirect
 	github.com/projectdiscovery/dnsx v1.2.2 // indirect
-	github.com/projectdiscovery/fastdialer v0.4.16 // indirect
+	github.com/projectdiscovery/fastdialer v0.4.17 // indirect
 	github.com/projectdiscovery/freeport v0.0.7 // indirect
-	github.com/projectdiscovery/gologger v1.1.60 // indirect
-	github.com/projectdiscovery/hmap v0.0.95 // indirect
+	github.com/projectdiscovery/gologger v1.1.61 // indirect
+	github.com/projectdiscovery/hmap v0.0.96 // indirect
 	github.com/projectdiscovery/ipranger v0.0.53 // indirect
 	github.com/projectdiscovery/machineid v0.0.0-20240226150047-2e2c51e35983 // indirect
 	github.com/projectdiscovery/mapcidr v1.1.97 // indirect
-	github.com/projectdiscovery/networkpolicy v0.1.28 // indirect
+	github.com/projectdiscovery/networkpolicy v0.1.29 // indirect
 	github.com/projectdiscovery/ratelimit v0.0.82 // indirect
-	github.com/projectdiscovery/retryabledns v1.0.108 // indirect
-	github.com/projectdiscovery/retryablehttp-go v1.0.131 // indirect
+	github.com/projectdiscovery/retryabledns v1.0.109 // indirect
+	github.com/projectdiscovery/retryablehttp-go v1.0.132 // indirect
 	github.com/projectdiscovery/uncover v1.1.0 // indirect
 	github.com/projectdiscovery/utils v0.7.0 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
@@ -128,7 +128,7 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
-	github.com/weppos/publicsuffix-go v0.40.3-0.20250408071509-6074bbe7fd39 // indirect
+	github.com/weppos/publicsuffix-go v0.50.1-0.20251112144109-bba082b5c27e // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	github.com/yuin/goldmark v1.7.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.3 // indirect
@@ -157,3 +157,5 @@ require (
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/projectdiscovery/utils => github.com/x0rw/projectdiscovery-utils-patch v0.0.0-20251207211347-0fccff6080d3
