@@ -20,6 +20,7 @@ func main() {
 			for job := range jobQueue {
 				log.Printf("[WORKER %d] Processing job: %s:%+v (ScanID: %s)", id, job.Cidr, job.Ports, job.ScanID)
 				scanner.RunScan(job)
+				log.Printf("[WORKER FINISHED] ScanID %s completed.", job.ScanID)
 			}
 			log.Printf("[WORKER %d] Exiting", id)
 		}(i)

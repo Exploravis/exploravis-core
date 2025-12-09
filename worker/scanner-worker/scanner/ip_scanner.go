@@ -46,8 +46,9 @@ func buildOptions(req ScanRequest) *runner.Options {
 		Host:     goflags.StringSlice{req.Cidr},
 		Ports:    req.Ports,
 		ScanType: "s",
-		Rate:     500,
-		Retries:  1,
+
+		Rate:    500,
+		Retries: 1,
 
 		Timeout:           2000,
 		EnableProgressBar: false,
@@ -92,4 +93,5 @@ func RunScan(req ScanRequest) {
 	defer r.Close()
 
 	r.RunEnumeration(ctx)
+	log.Printf("[WORKER FINISHED] ScanID %s completed.", req.ScanID)
 }
