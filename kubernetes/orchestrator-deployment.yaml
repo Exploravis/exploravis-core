@@ -16,8 +16,11 @@ spec:
       containers:
       - name: orchestrator
         image: ghcr.io/exploravis/orchestrator:latest
+        env:
+          - name: VITE_API_URL
+            value: "http://heheh:8088"
         ports:
-        - containerPort: 8088
+          - containerPort: 8088
         resources:
           requests:
             cpu: "200m"
@@ -25,6 +28,9 @@ spec:
           limits:
             cpu: "1000m"
             memory: "1Gi"
+        securityContext:
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]
 ---
 apiVersion: v1
 kind: Service

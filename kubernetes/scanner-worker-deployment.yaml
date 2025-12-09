@@ -24,3 +24,7 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+
+        securityContext:
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]

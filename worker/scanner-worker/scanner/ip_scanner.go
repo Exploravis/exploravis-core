@@ -43,15 +43,16 @@ func portsToString(ports []*port.Port) string {
 
 func buildOptions(req ScanRequest) *runner.Options {
 	return &runner.Options{
-		Host:              goflags.StringSlice{req.Cidr},
-		Ports:             req.Ports,
-		ScanType:          "s",
-		Rate:              2000,
-		Retries:           1,
-		Timeout:           5000,
+		Host:     goflags.StringSlice{req.Cidr},
+		Ports:    req.Ports,
+		ScanType: "s",
+		Rate:     500,
+		Retries:  1,
+
+		Timeout:           2000,
 		EnableProgressBar: false,
-		Verbose:           false,
-		Threads:           50,
+		Verbose:           true,
+		Threads:           10,
 		Stream:            true,
 		OnResult: func(hr *result.HostResult) {
 			println("OS FINGERPRINT:", hr.OS)
@@ -86,6 +87,8 @@ func RunScan(req ScanRequest) {
 		log.Printf("failed to create naabu runner: %v", err)
 		return
 	}
+
+	log.Printf("Naabu runner created succ")
 	defer r.Close()
 
 	r.RunEnumeration(ctx)
