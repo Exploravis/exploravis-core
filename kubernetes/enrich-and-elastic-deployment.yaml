@@ -4,7 +4,7 @@ metadata:
   name: enrichment-stack
   namespace: exploravis
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: enrichment-stack

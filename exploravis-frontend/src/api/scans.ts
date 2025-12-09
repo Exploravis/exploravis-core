@@ -10,6 +10,12 @@ export type IPScansResponse = {
   total?: number;
 };
 
+export async function submitScan(payload: { ip_range: string; ports: string;[k: string]: any }) {
+  const res = await axios.post(`${API_URL}/scan`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.data;
+}
 
 export async function fetchScansByIP(ip: string): Promise<IPScansResponse> {
   const url = `${API_URL}/scans?ip=${encodeURIComponent(ip)}&size=100`;
