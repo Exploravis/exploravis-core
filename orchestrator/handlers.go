@@ -27,7 +27,7 @@ func splitCIDR(cidr string, mask int) ([]string, error) {
 	var subnets []string
 	ones, bits := ipnet.Mask.Size()
 	if mask < ones || mask > bits {
-		log.Printf("[WARN] Requested mask %d invalid for CIDR %s, returning original", mask, cidr)
+		// log.Printf("[WARN] Requested mask %d invalid for CIDR %s, returning original", mask, cidr)
 		return []string{cidr}, nil
 	}
 
@@ -40,7 +40,7 @@ func splitCIDR(cidr string, mask int) ([]string, error) {
 			Mask: net.CIDRMask(mask, bits),
 		}
 		subnets = append(subnets, subnet.String())
-		log.Printf("[INFO] Generated subnet: %s", subnet.String())
+		// log.Printf("[INFO] Generated subnet: %s", subnet.String())
 		current = nextSubnet(current, mask)
 	}
 
@@ -80,6 +80,7 @@ func nextSubnet(ip net.IP, mask int) net.IP {
 	}
 	return newIP
 }
+
 func scanHandler(kafka *kgo.Client) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("[INFO] Scan handler invoked")
@@ -110,6 +111,7 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 		}
 
 		baseScanID := uuid.NewString()
+		req.ScanID = baseScanID
 		log.Printf("[INFO] Assigned base scan ID: %s", baseScanID)
 
 		subnets, err := splitCIDR(req.IPRange, 24)
@@ -121,17 +123,16 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 
 		for _, subnet := range subnets {
 			subReq := req
-			subReq.ScanID = uuid.NewString()
 			subReq.IPRange = subnet
 
 			msgBytes, err := json.Marshal(subReq)
 			if err != nil {
-				log.Printf("[ERROR] Failed to marshal subnet scan request for %s: %v", subnet, err)
+				// log.Printf("[ERROR] Failed to marshal subnet scan request for %s: %v", subnet, err)
 				continue
 			}
 
 			produceScanRequest(kafka, msgBytes)
-			log.Printf("[INFO] Produced scan request for subnet %s with ScanID %s", subnet, subReq.ScanID)
+			// log.Printf("[INFO] Produced scan request for subnet %s with ScanID %s", subnet, baseScanID)
 		}
 
 		w.WriteHeader(202)

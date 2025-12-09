@@ -52,7 +52,7 @@ func buildOptions(req ScanRequest) *runner.Options {
 
 		Timeout:           2000,
 		EnableProgressBar: false,
-		Verbose:           true,
+		Verbose:           false,
 		Threads:           10,
 		Stream:            true,
 		OnResult: func(hr *result.HostResult) {
@@ -66,11 +66,11 @@ func buildOptions(req ScanRequest) *runner.Options {
 
 			value, err := json.Marshal(msg)
 			if err != nil {
-				log.Printf("marshal error: %v", err)
+				// log.Printf("marshal error: %v", err)
 				return
 			}
 
-			fmt.Printf("[RESULT] %s -> %+v, ", hr.Host, hr.Ports)
+			// fmt.Printf("[RESULT] %s -> %+v, ", hr.Host, hr.Ports)
 			ProduceResult(value)
 
 		},

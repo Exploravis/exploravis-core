@@ -41,7 +41,7 @@ func main() {
 	mux.Handle("/scans", scansHandler(esClient))
 
 	handler := cors(mux)
-	addr := ":8088"
+	addr := ":8089"
 	if p := os.Getenv("PORT"); p != "" {
 		addr = ":" + p
 	}
