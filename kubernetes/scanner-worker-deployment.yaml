@@ -13,7 +13,7 @@ spec:
       labels:
         app: scanner-worker
     spec:
-      automountServiceAccountToken: false
+      # automountServiceAccountToken: false
       containers:
       - name: scanner-worker
         image: ghcr.io/exploravis/scanner-worker:latest

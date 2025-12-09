@@ -69,13 +69,6 @@ export const IPHeader: React.FC<IPHeaderProps> = ({
                 Export CSV
               </button>
             </div>
-            <button
-              onClick={() => window.open(`https://www.shodan.io/host/${ip}`, "_blank")}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md"
-            >
-              <ExternalLink size={16} />
-              View on Shodan
-            </button>
           </div>
         </div>
       </div>

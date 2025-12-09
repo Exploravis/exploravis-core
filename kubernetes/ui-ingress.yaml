@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: exploravis-ui 
+  namespace: exploravis
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: ui.dev-exploravis.mywire.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: exploravis-ui 
+                port:
+                  number: 3000
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: exploravis-api
+  namespace: exploravis
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: api.dev-exploravis.mywire.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orchestrator 
+                port:
+                  number: 8088

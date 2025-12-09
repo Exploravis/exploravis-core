@@ -41,9 +41,6 @@ export default function IPPageHeader({ ip, geoInfo, asnInfo, lastScanned, stats,
           <button onClick={() => exportData("csv")} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-white rounded-md transition-all shadow-sm border border-transparent hover:border-blue-200">
             <Download size={16} /> Export CSV
           </button>
-          <button onClick={() => window.open(`https://www.shodan.io/host/${ip}`, "_blank")} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow-md">
-            <ExternalLink size={16} /> View on Shodan
-          </button>
         </div>
       </div>
     </div>

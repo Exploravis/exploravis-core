@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = "http://orchestrator.exploravis.svc.cluster.local:8088";
+// const API_URL = "http://orchestrator.exploravis.svc.cluster.local:8088";
+const API_URL: string = import.meta.env.VITE_API_URL || "http://orchestrator.exploravis.svc.cluster.local:8088";
 
 export type IPScansResponse = {
   ip: string;
