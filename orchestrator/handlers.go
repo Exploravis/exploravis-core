@@ -31,27 +31,55 @@ func splitCIDR(cidr string, mask int) ([]string, error) {
 		return []string{cidr}, nil
 	}
 
-	numSubnets := 1 << (mask - ones)
-	baseIP := ip.Mask(ipnet.Mask)
+	current := ip.Mask(ipnet.Mask)
+	broadcast := lastIP(ipnet)
 
-	for i := 0; i < numSubnets; i++ {
-		subIP := make(net.IP, len(baseIP))
-		copy(subIP, baseIP)
-
-		for j := len(subIP) - 1; j >= 0; j-- {
-			subIP[j] += byte(i >> (8 * uint(len(subIP)-1-j)))
-		}
+	for cmpIP(current, broadcast) <= 0 {
 		subnet := &net.IPNet{
-			IP:   subIP,
+			IP:   current,
 			Mask: net.CIDRMask(mask, bits),
 		}
 		subnets = append(subnets, subnet.String())
 		log.Printf("[INFO] Generated subnet: %s", subnet.String())
+		current = nextSubnet(current, mask)
 	}
 
 	return subnets, nil
 }
 
+func lastIP(n *net.IPNet) net.IP {
+	ip := n.IP.To4()
+	mask := n.Mask
+	last := make(net.IP, len(ip))
+	for i := 0; i < len(ip); i++ {
+		last[i] = ip[i] | ^mask[i]
+	}
+	return last
+}
+
+func cmpIP(a, b net.IP) int {
+	for i := 0; i < len(a); i++ {
+		if a[i] < b[i] {
+			return -1
+		}
+		if a[i] > b[i] {
+			return 1
+		}
+	}
+	return 0
+}
+
+func nextSubnet(ip net.IP, mask int) net.IP {
+	ip = ip.To4()
+	increment := 1 << (32 - mask)
+	newIP := make(net.IP, 4)
+	copy(newIP, ip)
+	for i := 3; i >= 0; i-- {
+		newIP[i] += byte(increment & 0xFF)
+		increment >>= 8
+	}
+	return newIP
+}
 func scanHandler(kafka *kgo.Client) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("[INFO] Scan handler invoked")
