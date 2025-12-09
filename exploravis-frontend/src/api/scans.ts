@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://orchestrator:8080";
+const API_URL = "http://orchestrator.exploravis.svc.cluster.local:8088";
 
 export type IPScansResponse = {
   ip: string;

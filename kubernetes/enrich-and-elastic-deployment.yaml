@@ -13,6 +13,7 @@ spec:
       labels:
         app: enrichment-stack
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: enrich-meta-worker
         image: ghcr.io/exploravis/enrich-meta-worker:latest

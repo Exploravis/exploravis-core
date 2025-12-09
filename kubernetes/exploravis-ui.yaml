@@ -13,6 +13,7 @@ spec:
       labels:
         app: exploravis-ui
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: exploravis-ui
         image: ghcr.io/exploravis/exploravis-ui:latest

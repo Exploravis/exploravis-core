@@ -13,6 +13,7 @@ spec:
       labels:
         app: banner-worker
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: banner-worker
         image: ghcr.io/exploravis/banner-worker:latest

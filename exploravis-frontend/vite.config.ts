@@ -7,7 +7,14 @@ export default defineConfig({
   plugins: [react(), svgr()],
   server: {
     port: 3000,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    allowedHosts: true,
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["*"],
+      exposedHeaders: ["*"]
+    }
   },
 
   build: {
