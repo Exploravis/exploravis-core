@@ -19,6 +19,9 @@ spec:
         image: ghcr.io/exploravis/exploravis-ui:latest
         ports:
         - containerPort: 3000
+        env:
+          - name: VITE_API_URL
+            value: "http://heheh:8088"
 ---
 apiVersion: v1
 kind: Service
