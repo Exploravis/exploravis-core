@@ -44,7 +44,7 @@ func buildOptions(req ScanRequest) *runner.Options {
 	return &runner.Options{
 		Host:     goflags.StringSlice{req.Cidr},
 		Ports:    req.Ports,
-		ScanType: "s",
+		ScanType: "c",
 
 		Rate:    500,
 		Retries: 1,
