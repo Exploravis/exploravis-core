@@ -38,11 +38,11 @@ function HomePage() {
         <h1 className="text-5xl font-bold mb-4">
           Explore Your{" "}
           <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-            Security Data
+            IPs
           </span>
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Powerful visualization of security scans, IP analysis, and network intelligence.
+          IP analysis, and network intelligence.
         </p>
       </section>
 
@@ -53,7 +53,7 @@ function HomePage() {
           <div className="mt-2 text-gray-600 dark:text-gray-300">Total Scans</div>
         </div>
         <div className={cardClass}>
-          <div className="text-3xl font-bold text-green-500">{uniqueIPs}</div>
+          <div className="text-3xl font-bold text-green-500">-</div>
           <div className="mt-2 text-gray-600 dark:text-gray-300">Unique IPs</div>
         </div>
         <div className={cardClass}>
