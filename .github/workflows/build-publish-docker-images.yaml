@@ -3,52 +3,66 @@ name: Build & Publish exploravis core images
 on:
   push:
     tags:
-      - 'v*' 
+      - 'v*'
 
 jobs:
-  build-and-push-images:
+  setup:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write 
-
+    outputs:
+      sha: ${{ steps.meta.outputs.sha }}
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract SHA
+        id: meta
+        run: echo "sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # LATER
-      # - name: Login to Docker Hub (optional)
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #
-        
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner}}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push API Server 
+  orchestrator:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push orchestrator
         uses: docker/build-push-action@v5
         with:
           context: ./orchestrator
           push: true
           tags: |
             ghcr.io/exploravis/orchestrator:latest
-            ghcr.io/exploravis/orchestrator:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=MIT
+            ghcr.io/exploravis/orchestrator:${{ needs.setup.outputs.sha }}
 
-      - name: Build and Push scanner-worker 
+  scanner-worker:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push scanner-worker
         uses: docker/build-push-action@v5
         with:
           context: ./worker
@@ -56,14 +70,21 @@ jobs:
           push: true
           tags: |
             ghcr.io/exploravis/scanner-worker:latest
-            ghcr.io/exploravis/scanner-worker:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.revision=${{ github.sha }}
+            ghcr.io/exploravis/scanner-worker:${{ needs.setup.outputs.sha }}
 
-      - name: Build and Push banner-worker 
+  banner-worker:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push banner-worker
         uses: docker/build-push-action@v5
         with:
           context: ./worker
@@ -71,14 +92,21 @@ jobs:
           push: true
           tags: |
             ghcr.io/exploravis/banner-worker:latest
-            ghcr.io/exploravis/banner-worker:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.revision=${{ github.sha }}
+            ghcr.io/exploravis/banner-worker:${{ needs.setup.outputs.sha }}
 
-      - name: Build and Push elasticsearch-worker
+  elasticsearch-worker:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push elasticsearch-worker
         uses: docker/build-push-action@v5
         with:
           context: ./worker
@@ -86,14 +114,21 @@ jobs:
           push: true
           tags: |
             ghcr.io/exploravis/elasticsearch-worker:latest
-            ghcr.io/exploravis/elasticsearch-worker:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.revision=${{ github.sha }}
+            ghcr.io/exploravis/elasticsearch-worker:${{ needs.setup.outputs.sha }}
 
-      - name: Build and Push enrich-meta-worker 
+  enrich-meta-worker:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push enrich-meta-worker
         uses: docker/build-push-action@v5
         with:
           context: ./worker
@@ -101,27 +136,26 @@ jobs:
           push: true
           tags: |
             ghcr.io/exploravis/enrich-meta-worker:latest
-            ghcr.io/exploravis/enrich-meta-worker:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.revision=${{ github.sha }}
+            ghcr.io/exploravis/enrich-meta-worker:${{ needs.setup.outputs.sha }}
 
+  exploravis-ui:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push exploravis-ui 
-        # I HATE FORNTEND, pls help
+      - name: Build & push exploravis-ui
         uses: docker/build-push-action@v5
         with:
           context: ./exploravis-frontend
-          file: ./exploravis-frontend/Dockerfile 
+          file: ./exploravis-frontend/Dockerfile
           push: true
           tags: |
             ghcr.io/exploravis/exploravis-ui:latest
-            ghcr.io/exploravis/exploravis-ui:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-            org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.revision=${{ github.sha }}
-
+            ghcr.io/exploravis/exploravis-ui:${{ needs.setup.outputs.sha }}
