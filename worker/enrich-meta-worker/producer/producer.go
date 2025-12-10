@@ -16,6 +16,7 @@ func InitProducer(brokers []string) {
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
 		kgo.DefaultProduceTopic("finished_scan"),
+		kgo.RecordPartitioner(kgo.RoundRobinPartitioner()),
 	)
 	if err != nil {
 		log.Fatalf("failed to create results producer: %v", err)

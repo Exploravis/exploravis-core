@@ -20,7 +20,7 @@ spec:
           - name: VITE_API_URL
             value: "http://heheh:8088"
         ports:
-          - containerPort: 8088
+        - containerPort: 8089
         resources:
           requests:
             cpu: "200m"
@@ -28,9 +28,6 @@ spec:
           limits:
             cpu: "1000m"
             memory: "1Gi"
-        securityContext:
-          capabilities:
-            add: ["NET_RAW", "NET_ADMIN"]
 ---
 apiVersion: v1
 kind: Service
@@ -42,6 +39,6 @@ spec:
   selector:
     app: orchestrator
   ports:
-  - port: 8088
-    targetPort: 8088
+  - port: 8089
+    targetPort: 8089
     name: http

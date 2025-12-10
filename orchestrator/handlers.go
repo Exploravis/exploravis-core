@@ -131,7 +131,7 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 				continue
 			}
 
-			produceScanRequest(kafka, msgBytes)
+			produceScanRequest(kafka, msgBytes, subReq.IPRange)
 			// log.Printf("[INFO] Produced scan request for subnet %s with ScanID %s", subnet, baseScanID)
 		}
 

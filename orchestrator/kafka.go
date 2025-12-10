@@ -20,6 +20,7 @@ func newKafkaClient() *kgo.Client {
 		kgo.SeedBrokers(broker),
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
+		kgo.RecordPartitioner(kgo.RoundRobinPartitioner()),
 	)
 
 	log.Println("Connected")
@@ -30,9 +31,10 @@ func newKafkaClient() *kgo.Client {
 	return cl
 }
 
-func produceScanRequest(cl *kgo.Client, payload []byte) {
+func produceScanRequest(cl *kgo.Client, payload []byte, key string) {
 	record := &kgo.Record{
 		Topic: "ip_scan_request",
+		Key:   []byte(key),
 		Value: payload,
 	}
 

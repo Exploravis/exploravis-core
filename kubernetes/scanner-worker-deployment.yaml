@@ -4,7 +4,7 @@ metadata:
   name: scanner-worker
   namespace: exploravis
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: scanner-worker
@@ -13,17 +13,19 @@ spec:
       labels:
         app: scanner-worker
     spec:
-      # automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 0 
+
       containers:
       - name: scanner-worker
         image: ghcr.io/exploravis/scanner-worker:latest
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
+            cpu: "200m"
+            memory: "256Mi"
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "1000m"
+            memory: "1Gi"
 
         securityContext:
           capabilities:

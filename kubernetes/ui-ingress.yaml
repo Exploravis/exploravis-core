@@ -37,4 +37,4 @@ spec:
               service:
                 name: orchestrator 
                 port:
-                  number: 8088
+                  number: 8089
