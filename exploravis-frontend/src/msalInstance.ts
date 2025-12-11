@@ -1,38 +1,59 @@
+// msalInstance.ts - FIXED
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
-import { msalConfig } from "./authConfig";
+import { msalConfig, logAuthConfig } from "./authConfig";
 
+// Debug first
+logAuthConfig();
+
+// Create MSAL instance
 export const msalInstance = new PublicClientApplication(msalConfig);
 
-// Initialize and handle redirect
+// Initialize with proper callback handling
 export const initializeMsal = async () => {
   try {
-    // Initialize MSAL
     await msalInstance.initialize();
 
-    // Handle redirect response
-    const response = await msalInstance.handleRedirectPromise();
+    console.log("MSAL initialized for callback endpoint");
 
-    if (response) {
-      console.log("Login successful:", response.account);
-      msalInstance.setActiveAccount(response.account);
+    // Check if we're on the callback route
+    const isCallbackRoute = window.location.pathname.includes('/auth/callback');
+
+    if (isCallbackRoute) {
+      console.log("On callback route, handling redirect...");
+
+      const response = await msalInstance.handleRedirectPromise();
+
+      if (response) {
+        console.log("Callback handled successfully:", response.account?.username);
+        msalInstance.setActiveAccount(response.account);
+
+        // Redirect to home after successful callback
+        window.location.href = "/";
+      } else {
+        console.log("No response in callback, redirecting to home");
+        window.location.href = "/";
+      }
+    } else {
+      // Handle normal redirect promise
+      const response = await msalInstance.handleRedirectPromise();
+      if (response) {
+        console.log("Redirect handled:", response.account?.username);
+        msalInstance.setActiveAccount(response.account);
+      }
     }
-
-    // Set up event callback for future logins
-    msalInstance.addEventCallback((event) => {
-      if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
-        const payload = event.payload as any;
-        const account = payload.account;
-        msalInstance.setActiveAccount(account);
-      }
-
-      if (event.eventType === EventType.LOGOUT_SUCCESS) {
-        msalInstance.setActiveAccount(null);
-      }
-    });
 
     return msalInstance;
   } catch (error) {
     console.error("MSAL initialization failed:", error);
+
+    // Clear cache on specific errors
+    if (error.errorCode === "no_token_request_cache_error") {
+      console.log("Clearing cache and redirecting...");
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/";
+    }
+
     throw error;
   }
 };
