@@ -6,7 +6,7 @@ import type { RollupOptions } from 'rollup';
 export default defineConfig({
   plugins: [react(), svgr()],
   server: {
-    port: 3000,
+    port: 3001,
     host: '0.0.0.0',
     allowedHosts: true,
     cors: {

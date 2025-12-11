@@ -22,6 +22,16 @@ spec:
         env:
           - name: VITE_API_URL
             value: "http://heheh:8088"
+          - name: VITE_TENANT_ID
+            valueFrom:
+              secretKeyRef:
+                name: exploravis-auth
+                key: tenantId
+          - name: VITE_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: exploravis-auth
+                key: clientId
 ---
 apiVersion: v1
 kind: Service
