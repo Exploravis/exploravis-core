@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -10,6 +11,9 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type ClusterHealth struct {
@@ -40,14 +44,11 @@ func fetchJSONWithClient(url string, timeout time.Duration, headers map[string]s
 		return err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
-
-	dec := json.NewDecoder(resp.Body)
-	return dec.Decode(out)
+	return json.NewDecoder(resp.Body).Decode(out)
 }
 
 func fetchRawWithClient(url string, timeout time.Duration, headers map[string]string, transport *http.Transport) (string, error) {
@@ -56,12 +57,10 @@ func fetchRawWithClient(url string, timeout time.Duration, headers map[string]st
 		return "", err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return "", fmt.Errorf("status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
-
 	b, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	if err != nil {
 		return "", err
@@ -78,15 +77,69 @@ func checkElasticsearch(base string) (any, error) {
 	if err := fetchJSONWithClient(u, 3*time.Second, nil, nil, &out); err != nil {
 		return nil, err
 	}
-	// keep full ES response; caller can inspect .status field
 	return out, nil
 }
 
+func checkKafkaDetailed(broker string) (any, error) {
+	if broker == "" {
+		return nil, fmt.Errorf("KAFKA_BROKER unset")
+	}
+
+	seeds := []string{broker}
+	cl, err := kgo.NewClient(
+		kgo.SeedBrokers(seeds...),
+		kgo.AllowAutoTopicCreation(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cl.Close()
+
+	admin := kadm.NewClient(cl)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	topicsMeta, err := admin.ListTopics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := admin.ListGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	topics := make([]map[string]any, 0)
+	for name, meta := range topicsMeta {
+		t := map[string]any{
+			"name":       name,
+			"partitions": len(meta.Partitions),
+			"replicas":   meta.Partitions[0].Replicas,
+		}
+		topics = append(topics, t)
+	}
+
+	consumerGroups := make([]map[string]any, 0)
+	for _, g := range groups {
+		consumerGroups = append(consumerGroups, map[string]any{
+			"group":         g.Group,
+			"state":         g.State,
+			"coordinator":   g.Coordinator,
+			"protocol_type": g.ProtocolType,
+		})
+	}
+
+	return map[string]any{
+		"topics":          topics,
+		"consumer_groups": consumerGroups,
+	}, nil
+}
 func checkKafka(metricsURL string) (any, error) {
 	if metricsURL == "" {
 		return nil, fmt.Errorf("KAFKA_METRICS_URL unset")
 	}
-	raw, err := fetchRawWithClient(metricsURL, 3*time.Second, nil, nil)
+	raw, err := fetchRawWithClient(metricsURL, 10*time.Second, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -94,20 +147,16 @@ func checkKafka(metricsURL string) (any, error) {
 	if len(snippet) > 500 {
 		snippet = snippet[:500]
 	}
-	// treat presence of any content as "up"
 	if strings.TrimSpace(raw) == "" {
 		return nil, fmt.Errorf("empty metrics")
 	}
-	return map[string]any{
-		"metrics_snippet": snippet,
-	}, nil
+	return map[string]any{"metrics_snippet": snippet}, nil
 }
 
 func checkKubernetes(apiURL string) (any, error) {
 	if apiURL == "" {
 		apiURL = "https://kubernetes.default.svc"
 	}
-
 	headers := map[string]string{}
 	var transport *http.Transport
 
@@ -138,10 +187,7 @@ func checkKubernetes(apiURL string) (any, error) {
 		if !pool.AppendCertsFromPEM(b) {
 			return nil, fmt.Errorf("failed to parse CA file")
 		}
-		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: pool},
-		}
-	} else {
+		transport = &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}
 	}
 
 	u := strings.TrimRight(apiURL, "/")
@@ -150,11 +196,19 @@ func checkKubernetes(apiURL string) (any, error) {
 	var lastErr error
 	for _, candidate := range tryURLs {
 		var out any
-		if err := fetchJSONWithClient(candidate, 3*time.Second, headers, transport, &out); err == nil {
-			return out, nil
+		if err := fetchJSONWithClient(candidate, 10*time.Second, headers, transport, &out); err == nil {
+			nodes, nErr := getClusterNodes(u, token, caPath)
+			if nErr != nil {
+				return map[string]any{"api": out, "nodes_error": nErr.Error()}, nil
+			}
+			return map[string]any{"api": out, "nodes": nodes}, nil
 		} else {
-			if raw, rErr := fetchRawWithClient(candidate, 2*time.Second, headers, transport); rErr == nil {
-				return map[string]string{"status": "ok", "message": raw}, nil
+			if raw, rErr := fetchRawWithClient(candidate, 10*time.Second, headers, transport); rErr == nil {
+				nodes, nErr := getClusterNodes(u, token, caPath)
+				if nErr != nil {
+					return map[string]any{"status": "ok", "message": raw, "nodes_error": nErr.Error()}, nil
+				}
+				return map[string]any{"status": "ok", "message": raw, "nodes": nodes}, nil
 			}
 			lastErr = err
 		}
@@ -177,13 +231,11 @@ func healthHandler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := ClusterHealth{Status: "ok"}
-
 		upCount := 0
 		downCount := 0
 		unknownCount := 0
 		total := 0
 
-		// Elasticsearch
 		total++
 		if out, err := checkElasticsearch(esURL); err != nil {
 			h.Elasticsearch = map[string]any{"status": "down", "error": err.Error()}
@@ -193,16 +245,14 @@ func healthHandler() http.Handler {
 			upCount++
 		}
 
-		// Kafka
 		total++
-		if out, err := checkKafka(kafkaMetricsURL); err != nil {
+		if out, err := checkKafkaDetailed(os.Getenv("KAFKA_BROKER")); err != nil {
 			h.Kafka = map[string]any{"status": "down", "error": err.Error()}
 			downCount++
 		} else {
 			h.Kafka = out
 			upCount++
 		}
-
 		if out, err := checkKubernetes(k8sAPI); err != nil {
 			h.K8s = map[string]any{"status": "down", "error": err.Error()}
 			downCount++
@@ -211,13 +261,11 @@ func healthHandler() http.Handler {
 			upCount++
 		}
 
-		// compute overall status
 		if downCount == total {
 			h.Status = "down"
 			w.WriteHeader(http.StatusServiceUnavailable)
 		} else if downCount > 0 || unknownCount > 0 {
 			h.Status = "degraded"
-			// 200 is OK for degraded; you can change to 206 or 503 depending on your health-check semantics
 		} else {
 			h.Status = "ok"
 		}
