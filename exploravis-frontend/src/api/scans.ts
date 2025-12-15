@@ -31,6 +31,7 @@ export async function fetchScansByIP(ip: string): Promise<IPScansResponse> {
     return ts > max ? ts : max;
   }, 0);
 
+  console.log(scans)
   return {
     ip,
     scans,
@@ -41,6 +42,7 @@ export async function fetchScansByIP(ip: string): Promise<IPScansResponse> {
 }
 export type Scan = {
   ip: string;
+  scan_id: string;
   port: number;
   protocol: string;
   timestamp: number;

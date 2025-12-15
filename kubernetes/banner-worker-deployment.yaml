@@ -1,10 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: banner-worker
   namespace: exploravis
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: banner-worker
@@ -15,12 +14,16 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - name: banner-worker
-        image: ghcr.io/exploravis/banner-worker:latest
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
+        - name: banner-worker
+          image: ghcr.io/exploravis/banner-worker:latest
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          securityContext:
+            capabilities:
+              add: ["NET_RAW", "NET_ADMIN"]
+          hostNetwork: true

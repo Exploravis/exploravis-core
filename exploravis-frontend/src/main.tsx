@@ -1,17 +1,14 @@
-// /src/main.tsx
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { MsalProvider } from "@azure/msal-react";
-import { initializeMsal, msalInstance } from "./msalInstance";
+// import { MsalProvider } from "@azure/msal-react";
+// import { initializeMsal, msalInstance } from "./msalInstance";
 import App from "./App";
 import "./index.css";
 import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
-// Create root first
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 
-// Loading component
 const LoadingScreen = () => (
   <div style={{
     display: "flex",
@@ -28,6 +25,7 @@ const LoadingScreen = () => (
   </div>
 );
 
+/*
 // Initialize MSAL before rendering
 initializeMsal()
   .then(() => {
@@ -51,3 +49,13 @@ initializeMsal()
       </div>
     );
   });
+*/
+
+// Direct render without MSAL
+root.render(
+  <React.StrictMode>
+    <Suspense fallback={<LoadingScreen />}>
+      <App />
+    </Suspense>
+  </React.StrictMode>
+);

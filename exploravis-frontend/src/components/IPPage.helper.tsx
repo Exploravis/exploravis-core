@@ -1,4 +1,6 @@
 import React from "react";
+
+
 import { fetchScansByIP, type IPScansResponse, type Scan } from "../api/scans";
 // Port-service mapping
 export const PORT_SERVICES: Record<number, { name: string; category: string; color: string }> = {
@@ -36,12 +38,34 @@ export function countryFlag(code?: string) {
   return Array.from(c).map(ch => String.fromCodePoint(127397 + ch.charCodeAt(0))).join("");
 }
 
-export function formatTimestamp(ts?: number): string {
-  if (!ts) return "N/A";
+// src/components/IPPage.helper.ts
+export function formatTimestamp(ts: number): string {
+  if (!ts) return "-";
+  const date = new Date(ts * 1000); // convert seconds to milliseconds
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+export function timeAgo(ts: number): string {
+  if (!ts) return "-";
+  const now = new Date();
   const date = new Date(ts * 1000);
-  const diffHours = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60));
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // Reusable UI components

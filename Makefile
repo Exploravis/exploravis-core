@@ -20,6 +20,12 @@ meta:
 elastic:
 	cd worker/elasticsearch-worker && go run . 
 
+
+inc-partition:
+	@for topic in $(TOPICS); do \
+		kubectl exec -n kafka redpanda-0 -- rpk topic add-partitions $$topic -n 8; \
+	done
+
 create-topics:
 	@for topic in $(TOPICS); do \
 	echo "Creating topic $$topic..."; \

@@ -17,8 +17,10 @@ spec:
       - name: orchestrator
         image: ghcr.io/exploravis/orchestrator:latest
         env:
-          - name: VITE_API_URL
-            value: "http://heheh:8088"
+          - name: KAFKA_BROKER_METRICS
+            value: "http://redpanda.kafka.svc.cluster.local:9644/metrics"
+          - name: KAFKA_BROKER
+            value: "redpanda-0.redpanda.kafka.svc.cluster.local:9093"
         ports:
         - containerPort: 8089
         resources:

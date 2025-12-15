@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: exploravis
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+type: Opaque
+stringData:
+  key: "placeholder"
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: admin@hightech.edu
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: traefik
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: exploravis-ui-cert
+  namespace: exploravis
+spec:
+  secretName: exploravis-ui-tls   # secret that Traefik will use
+  dnsNames:
+    - ui.dev-exploravis.mywire.org
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: exploravis-ui
+  namespace: exploravis
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`ui.dev-exploravis.mywire.org`)
+      kind: Rule
+      services:
+        - name: exploravis-ui
+          port: 3000
+  tls:
+    secretName: exploravis-ui-tls

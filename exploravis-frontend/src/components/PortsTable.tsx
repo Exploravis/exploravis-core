@@ -1,7 +1,7 @@
 import React from "react";
 import { Shield, Search } from "lucide-react";
 import type { Scan } from "../api/scans";
-import { getServiceInfo, ServiceTag, StatusTag, formatTimestamp } from "./IPPage.helper";
+import { getServiceInfo, ServiceTag, StatusTag, formatTimestamp, timeAgo } from "./IPPage.helper";
 import { getRiskLevel } from "./ScanCard.helpers";
 import { ExpandedRow } from "./ExpandedRow";
 import { PortGridItem } from "./PortGridItem";
@@ -180,7 +180,10 @@ export const PortsTable: React.FC<PortsTableProps> = ({
                           <span className="text-gray-300">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-gray-500 text-xs">{formatTimestamp(scan.timestamp)}</td>
+                      <td className="px-4 py-2.5 text-gray-500 text-xs">
+                        <div>{formatTimestamp(scan.timestamp)}</div>
+                        <div className="!text-red-400 text-[14px]">{timeAgo(scan.timestamp)}</div>
+                      </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex gap-2 justify-end opacity-100 group-hover:opacity-100 transition-opacity">
                           <button
