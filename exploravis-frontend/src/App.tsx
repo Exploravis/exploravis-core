@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
+import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
 import SimpleLayout from "./components/Layout";
 import ScanSearch from "./pages/ScanSearch";
 import IPPage from "./pages/IPPage";
@@ -13,7 +13,7 @@ import TenantGuard from "./components/TenantGuard";
 import LoginPage from "./components/LoginPage";
 import { Layout } from "antd";
 import LogoutPage from "./pages/LogoutPage";
-// import AuthCallback from "./pages/AuthCallback.tsx"; // <- MSAL callback page
+import AuthCallback from "./pages/AuthCallback"; // <- New MSAL callback page
 
 const queryClient = new QueryClient();
 const { Content } = Layout;
@@ -41,19 +41,26 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/*
+        {/* MSAL redirect page must be outside AuthenticatedTemplate */}
         <Route path="/auth/callback" element={<AuthCallback />} />
-        */}
 
-        {/* Render app directly without authentication */}
+        {/* Authentication wrappers */}
         <Route
           path="/*"
           element={
-            <Layout style={{ minHeight: "100vh" }}>
-              <TenantGuard>
+            <>
+              {/* <UnauthenticatedTemplate> */}
+              {/*   <LoginPage /> */}
+              {/* </UnauthenticatedTemplate> */}
+
+              {/* <AuthenticatedTemplate> */}
+              <Layout style={{ minHeight: "100vh" }}>
+                {/* <TenantGuard> */}
                 <ProtectedRouter />
-              </TenantGuard>
-            </Layout>
+                {/* </TenantGuard> */}
+              </Layout>
+              {/* </AuthenticatedTemplate> */}
+            </>
           }
         />
       </Routes>

@@ -109,32 +109,29 @@ const SimpleNavbar = () => {
           <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>ExplorAvis</span>
         </Link>
 
-        {/* Navigation - Only show when authenticated */}
-        {isAuthenticated && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                style={{
-                  textDecoration: 'none',
-                  color: location.pathname === item.path ? '#60a5fa' : '#d1d5db',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '4px',
-                  fontWeight: location.pathname === item.path ? '600' : '400',
-                  backgroundColor: location.pathname === item.path ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              style={{
+                textDecoration: 'none',
+                color: location.pathname === item.path ? '#60a5fa' : '#d1d5db',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '4px',
+                fontWeight: location.pathname === item.path ? '600' : '400',
+                backgroundColor: location.pathname === item.path ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                transition: 'all 0.2s',
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Right Section: GitHub & User Profile */}
