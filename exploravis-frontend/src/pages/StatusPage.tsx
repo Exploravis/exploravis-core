@@ -46,7 +46,7 @@ const App: React.FC = () => {
           <footer className="mt-8 text-center text-gray-500 text-sm">
             <p>Data refreshes automatically every 30 seconds</p>
             <p className="mt-1">
-              API Endpoint: {import.meta.env.VITE_API_URL || 'http://api.dev-exploravis.mywire.org'}
+              API Endpoint: {import.meta.env.VITE_API_URL || 'https://api.dev-exploravis.mywire.org'}
             </p>
           </footer>
         </div>

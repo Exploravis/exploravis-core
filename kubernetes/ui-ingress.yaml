@@ -43,6 +43,19 @@ spec:
 #                   number: 3000
 
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: exploravis-api-cert
+  namespace: exploravis
+spec:
+  secretName: exploravis-api-tls   
+  dnsNames:
+    - api.dev-exploravis.mywire.org
+  issuerRef:
+    name: letsencrypt-prod        
+    kind: ClusterIssuer
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -50,6 +63,7 @@ metadata:
   namespace: exploravis
   annotations:
     kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
     - host: api.dev-exploravis.mywire.org
@@ -62,3 +76,7 @@ spec:
                 name: orchestrator 
                 port:
                   number: 8089
+  tls:
+    - hosts:
+        - api.dev-exploravis.mywire.org
+      secretName: exploravis-api-tls
