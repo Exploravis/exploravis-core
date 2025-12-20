@@ -13,15 +13,14 @@ func cors(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
+
 func loadEnv() {
 	_ = godotenv.Load()
 }
@@ -30,6 +29,7 @@ func main() {
 
 	kafkaClient := newKafkaClient()
 	defer kafkaClient.Close()
+
 	esClient, err := newElasticsearchClient()
 	if err != nil {
 		log.Fatalf("failed to create ES client: %v", err)

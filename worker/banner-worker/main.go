@@ -4,41 +4,63 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"strings"
 	"time"
 
-	"github.com/exploravis/worker/banner-worker/producer"
+	"github.com/exploravis/worker/common/batch"
+	"github.com/exploravis/worker/common/helpers"
+	"github.com/exploravis/worker/common/kafka"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func main() {
 	workerCount := 8
 	jobQueue := make(chan ServiceScanRequest, 2000)
+	seeds := []string{"redpanda-0.redpanda.kafka.svc.cluster.local:9093"}
 
-	log.Println("[INFO] Starting", workerCount, "worker goroutines...")
+	log.Println("[INFO] Initializing Kafka producer with seeds:", seeds)
+
+	kafka.InitProducer(seeds, "scan.facts")
+	// kafka.InitSignalProducer(seeds, "scan.signals")
+
+	factBatcher := batch.NewBatch(1000, func(facts []kafka.Fact) {
+		out := batch.FactBatch{
+			Schema:    1,
+			BatchID:   "dfsf",
+			Facts:     facts,
+			CreatedAt: time.Now(),
+			// Producer:  "scanner_worker",
+		}
+		kafka.ProduceResult(helpers.ToJSON(out))
+	})
+
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+		for range ticker.C {
+			factBatcher.FlushIfStale(500 * time.Millisecond)
+		}
+	}()
+
 	for i := 0; i < workerCount; i++ {
 		go func(id int) {
 			log.Printf("[WORKER %d] Started", id)
 			for job := range jobQueue {
-				log.Printf("[WORKER %d] Processing job: %s:%s (ScanID: %s)", id, job.IP, job.Port, job.ScanID)
-				grabBanner(job)
+				log.Printf("[WORKER %d] Processing job: %s:%d (ScanID: %s)", id, job.IP, job.Port, job.ScanID)
+				grabBanner(job, factBatcher)
 			}
 			log.Printf("[WORKER %d] Exiting", id)
 		}(i)
 	}
 
-	seeds := []string{"redpanda-0.redpanda.kafka.svc.cluster.local:9093"}
-	log.Println("[INFO] Initializing Kafka producer with seeds:", seeds)
-	producer.InitProducer(seeds)
-
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
-		kgo.ConsumeTopics("ip_scan_result"),
+		kgo.ConsumeTopics("scan.signals"),
 		kgo.ConsumerGroup("banner-scanner-group"),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
+
 	if err != nil {
 		log.Fatalf("[ERROR] Unable to create Kafka client: %v", err)
 	}
@@ -59,23 +81,19 @@ func main() {
 		}
 
 		fetches.EachPartition(func(p kgo.FetchTopicPartition) {
-			log.Printf("[INFO] Processing partition %s/%d with %d records", p.Topic, p.Partition, len(p.Records))
 			for _, record := range p.Records {
-				log.Printf("[INFO] Consumed message %s/%d: %s", record.Topic, record.Partition, string(record.Value))
-
-				var req PortsScanRequest
-				if err := json.Unmarshal(record.Value, &req); err != nil {
-					log.Printf("[WARN] Bad message: %v", err)
+				var batch batch.SignalBatch
+				if err := json.Unmarshal(record.Value, &batch); err != nil {
 					continue
 				}
-
-				ports := strings.Split(req.Ports, ",")
-				log.Printf("[INFO] Queueing %d ports for IP %s (ScanID: %s)", len(ports), req.IP, req.ScanID)
-				for _, portStr := range ports {
+				for _, signal := range batch.Signals {
+					if signal.Type != "banner_scan_requested" {
+						continue
+					}
 					jobQueue <- ServiceScanRequest{
-						ScanID: req.ScanID,
-						IP:     req.IP,
-						Port:   portStr,
+						ScanID: signal.ScanID,
+						IP:     signal.IP,
+						Port:   signal.Port,
 					}
 				}
 			}

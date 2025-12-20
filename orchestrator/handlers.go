@@ -6,6 +6,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -15,6 +19,81 @@ type ScanRequest struct {
 	ScanID  string `json:"scan_id"`
 	IPRange string `json:"ip_range"`
 	Ports   string `json:"ports"`
+}
+
+// parsePorts accepts CSV and ranges (e.g. "80,443,8000-8010,1-1024")
+// returns a deduplicated, sorted slice of ints
+func parsePorts(portsStr string) ([]int, error) {
+	set := make(map[int]struct{})
+	for _, part := range strings.Split(portsStr, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if strings.Contains(part, "-") {
+			bounds := strings.SplitN(part, "-", 2)
+			if len(bounds) != 2 {
+				continue
+			}
+			a, err1 := strconv.Atoi(strings.TrimSpace(bounds[0]))
+			b, err2 := strconv.Atoi(strings.TrimSpace(bounds[1]))
+			if err1 != nil || err2 != nil {
+				continue
+			}
+			if a > b {
+				a, b = b, a
+			}
+			for p := a; p <= b; p++ {
+				if p > 0 && p <= 65535 {
+					set[p] = struct{}{}
+				}
+			}
+		} else {
+			p, err := strconv.Atoi(part)
+			if err != nil {
+				continue
+			}
+			if p > 0 && p <= 65535 {
+				set[p] = struct{}{}
+			}
+		}
+	}
+
+	ports := make([]int, 0, len(set))
+	for p := range set {
+		ports = append(ports, p)
+	}
+	// sort for determinism
+	sortInts(ports)
+	return ports, nil
+}
+
+func sortInts(a []int) {
+	if len(a) > 1 {
+		sort.Ints(a)
+	}
+}
+
+// chunkPorts splits slice of ports into chunks of size chunkSize.
+// returns a slice of string representations ("80,443,...")
+func chunkPorts(ports []int, chunkSize int) []string {
+	if chunkSize <= 0 {
+		chunkSize = 20
+	}
+	var chunks []string
+	for i := 0; i < len(ports); i += chunkSize {
+		end := i + chunkSize
+		if end > len(ports) {
+			end = len(ports)
+		}
+		sub := ports[i:end]
+		parts := make([]string, 0, len(sub))
+		for _, p := range sub {
+			parts = append(parts, strconv.Itoa(p))
+		}
+		chunks = append(chunks, strings.Join(parts, ","))
+	}
+	return chunks
 }
 
 func splitCIDR(cidr string, mask int) ([]string, error) {
@@ -27,7 +106,6 @@ func splitCIDR(cidr string, mask int) ([]string, error) {
 	var subnets []string
 	ones, bits := ipnet.Mask.Size()
 	if mask < ones || mask > bits {
-		// log.Printf("[WARN] Requested mask %d invalid for CIDR %s, returning original", mask, cidr)
 		return []string{cidr}, nil
 	}
 
@@ -40,7 +118,6 @@ func splitCIDR(cidr string, mask int) ([]string, error) {
 			Mask: net.CIDRMask(mask, bits),
 		}
 		subnets = append(subnets, subnet.String())
-		// log.Printf("[INFO] Generated subnet: %s", subnet.String())
 		current = nextSubnet(current, mask)
 	}
 
@@ -82,6 +159,14 @@ func nextSubnet(ip net.IP, mask int) net.IP {
 }
 
 func scanHandler(kafka *kgo.Client) http.Handler {
+	// read chunk size from env, default 20
+	chunkSize := 20
+	if s := os.Getenv("PORT_CHUNK_SIZE"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v > 0 {
+			chunkSize = v
+		}
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("[INFO] Scan handler invoked")
 		if r.Method != http.MethodPost {
@@ -109,11 +194,26 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 			http.Error(w, "ip_range required", 400)
 			return
 		}
+		// if ports missing, default to "80"
+		if strings.TrimSpace(req.Ports) == "" {
+			req.Ports = "80"
+		}
 
+		// base parent id
 		baseScanID := uuid.NewString()
-		req.ScanID = baseScanID
 		log.Printf("[INFO] Assigned base scan ID: %s", baseScanID)
 
+		// parse and chunk ports
+		ports, err := parsePorts(req.Ports)
+		if err != nil {
+			log.Printf("[ERROR] Failed to parse ports: %v", err)
+			http.Error(w, "invalid ports", 400)
+			return
+		}
+		portChunks := chunkPorts(ports, chunkSize)
+		log.Printf("[DEBUG] Port chunks: %d (chunk size=%d)", len(portChunks), chunkSize)
+
+		// split to /24 subnets
 		subnets, err := splitCIDR(req.IPRange, 24)
 		if err != nil {
 			log.Printf("[ERROR] Failed to split CIDR: %v", err)
@@ -121,18 +221,22 @@ func scanHandler(kafka *kgo.Client) http.Handler {
 			return
 		}
 
+		// produce one message per (subnet, portChunk)
 		for _, subnet := range subnets {
-			subReq := req
-			subReq.IPRange = subnet
+			for _, portsChunk := range portChunks {
+				subReq := ScanRequest{
+					ScanID:  baseScanID,
+					IPRange: subnet,
+					Ports:   portsChunk,
+				}
 
-			msgBytes, err := json.Marshal(subReq)
-			if err != nil {
-				// log.Printf("[ERROR] Failed to marshal subnet scan request for %s: %v", subnet, err)
-				continue
+				msgBytes, err := json.Marshal(subReq)
+				if err != nil {
+					log.Printf("[ERROR] Failed to marshal sub request: %v", err)
+					continue
+				}
+				produceScanRequest(kafka, msgBytes, subReq.IPRange)
 			}
-
-			produceScanRequest(kafka, msgBytes, subReq.IPRange)
-			// log.Printf("[INFO] Produced scan request for subnet %s with ScanID %s", subnet, baseScanID)
 		}
 
 		w.WriteHeader(202)

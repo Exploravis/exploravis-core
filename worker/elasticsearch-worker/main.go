@@ -1,88 +1,82 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync"
+	"time"
 
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esutil"
+	"github.com/exploravis/worker/common/batch"
+	"github.com/exploravis/worker/common/elasticsearch"
+	"github.com/exploravis/worker/common/kafka"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func main() {
 	workerCount := 8
-	jobQueue := make(chan ServiceScanResult, 2000)
+	jobQueue := make(chan kafka.Fact, 2000)
+	elasticsearchAddress := "http://elasticsearch-cluster-master.elasticsearch.svc:9200"
+	index := "scans-stats"
 
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{
-			"http://elasticsearch-cluster-master.elasticsearch.svc:9200",
-		},
-	})
-	if err != nil {
-		log.Fatalf("Error creating ES client: %v", err)
-	}
-	log.Println("Connected to Elasticsearch cluster")
+	bulkIndexer := elasticsearch.InitElasticsearchBulkIndexer(elasticsearchAddress, index)
 
-	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Client: es,
-		Index:  "scans-000001",
-	})
-	if err != nil {
-		log.Fatalf("Error creating bulk indexer: %v", err)
-	}
-	defer func() {
-		if err := bi.Close(context.Background()); err != nil {
-			log.Printf("Error closing bulk indexer: %v", err)
-		}
-	}()
-
-	for i := range workerCount {
+	var wg sync.WaitGroup
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
 		go func(id int) {
-			for job := range jobQueue {
-
-				log.Println("go routine invoked for", job.IP)
-				if err := indexToES(bi, job); err != nil {
-					log.Printf("[worker %d] failed to index: %v", id, err)
+			defer wg.Done()
+			for fact := range jobQueue {
+				docID := fmt.Sprintf("%s:%d", fact.IP, fact.Port)
+				update := map[string]any{
+					// Merge/append latest payload under the FactType
+					"doc": map[string]any{
+						fact.FactType: fact.Payload,
+						"ip":          fact.IP,
+						"port":        fact.Port,
+					},
+					"doc_as_upsert": true, // create if missing
 				}
-				log.Printf("Indexed %s:%d successfully", job.IP, job.Port)
+
+				data, err := json.Marshal(update)
+				if err != nil {
+					log.Printf("[worker %d] failed to marshal update: %v", id, err)
+					continue
+				}
+
+				if err := elasticsearch.IndexToESWithID(bulkIndexer, docID, data); err != nil {
+					log.Printf("[worker %d] failed to index: %v", id, err)
+					continue
+				}
+
+				log.Printf("[worker %d] Merged %s fact for %s", id, fact.FactType, docID)
 			}
 		}(i)
 	}
 
+	// Kafka consumer
 	seeds := []string{"redpanda-0.redpanda.kafka.svc.cluster.local:9093"}
-	cl, err := kgo.NewClient(
+	client, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
-		kgo.ConsumeTopics("finished_scan"),
-		kgo.ConsumerGroup("es-worker-group-1"),
+		kgo.ConsumeTopics("scan.facts"),
+		kgo.ConsumerGroup("es-facts-worker"),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+
+		kgo.RebalanceTimeout(5*time.Second),
+		kgo.AutoCommitInterval(1*time.Second),
 	)
 	if err != nil {
-		log.Fatalf("unable to create client: %v", err)
+		log.Fatalf("unable to create Kafka client: %v", err)
 	}
-	defer cl.Close()
-
-	log.Println("Redpanda consumer started...")
+	defer client.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sig
-		log.Println("Shutdown signal received, closing...")
-		cancel()
-		close(jobQueue)
-	}()
-
-	log.Println("Starting fetching loop")
+	log.Println("Starting Kafka fetch loop")
 	for {
-		fetches := cl.PollFetches(ctx)
+		fetches := client.PollFetches(ctx)
 		if errs := fetches.Errors(); len(errs) > 0 {
 			for _, e := range errs {
 				log.Printf("fetch error: %v", e)
@@ -92,30 +86,16 @@ func main() {
 
 		fetches.EachPartition(func(p kgo.FetchTopicPartition) {
 			for _, record := range p.Records {
-				var result ServiceScanResult
-				if err := json.Unmarshal(record.Value, &result); err != nil {
+				var batch batch.FactBatch
+				if err := json.Unmarshal(record.Value, &batch); err != nil {
 					log.Printf("invalid message: %v", err)
 					continue
 				}
-				log.Println("Fetched 1 message")
-				jobQueue <- result
+
+				for _, fact := range batch.Facts {
+					jobQueue <- fact
+				}
 			}
 		})
 	}
-}
-
-func indexToES(bi esutil.BulkIndexer, result ServiceScanResult) error {
-	log.Println("Indexing to Elasticsearch in bulk")
-	data, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-
-	return bi.Add(context.Background(), esutil.BulkIndexerItem{
-		Action: "index",
-		Body:   bytes.NewReader(data),
-		OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, resp esutil.BulkIndexerResponseItem, err error) {
-			log.Printf("failed indexing doc: %v, resp: %+v", err, resp)
-		},
-	})
 }

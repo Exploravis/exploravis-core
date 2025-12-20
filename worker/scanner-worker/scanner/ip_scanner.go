@@ -2,45 +2,17 @@ package scanner
 
 import (
 	"context"
-	"encoding/json"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 
+	"github.com/exploravis/worker/common/batch"
+	"github.com/exploravis/worker/common/kafka"
 	"github.com/projectdiscovery/goflags"
-	"github.com/projectdiscovery/naabu/v2/pkg/port"
 	"github.com/projectdiscovery/naabu/v2/pkg/result"
 	"github.com/projectdiscovery/naabu/v2/pkg/runner"
 )
 
-type ScanRequest struct {
-	ScanID string `json:"scan_id"`
-	Cidr   string `json:"ip_range"`
-	Ports  string `json:"ports"`
-}
-
-type ScanResult struct {
-	ScanID string `json:"scan_id"`
-	Host   string `json:"host"`
-	Ports  string `json:"ports"`
-	Time   int64  `json:"timestamp"`
-}
-
-func portsToString(ports []*port.Port) string {
-
-	if len(ports) == 0 {
-		return ""
-	}
-
-	out := make([]string, 0, len(ports))
-	for _, p := range ports {
-		out = append(out, strconv.Itoa(p.Port))
-	}
-	return strings.Join(out, ",")
-}
-
-func buildOptions(req ScanRequest) *runner.Options {
+func buildOptions(req ScanRequest, factBatcher *batch.Batch[kafka.Fact], signalBatcher *batch.Batch[kafka.Signal]) *runner.Options {
 	return &runner.Options{
 		Host:     goflags.StringSlice{req.Cidr},
 		Ports:    req.Ports,
@@ -54,33 +26,41 @@ func buildOptions(req ScanRequest) *runner.Options {
 		Verbose:           false,
 		Threads:           10,
 		Stream:            true,
+
 		OnResult: func(hr *result.HostResult) {
-			println("OS FINGERPRINT:", hr.OS)
-			msg := ScanResult{
-				ScanID: req.ScanID,
-				Host:   hr.Host,
-				Ports:  portsToString(hr.Ports),
-				Time:   time.Now().Unix(),
+
+			now := time.Now()
+			log.Printf("OnResult: %s, %+v", hr.Host, hr.Ports)
+
+			for _, port := range hr.Ports {
+				fact := kafka.Fact{
+					FactType:   "port_open",
+					ScanID:     req.ScanID,
+					IP:         hr.Host,
+					Port:       port.Port,
+					ObservedAt: now,
+					Source:     "scanner_worker",
+				}
+				factBatcher.Add(fact)
+
+				signal := kafka.Signal{
+					// SignalID: kafka.NewSignalID(req.ScanID, hr.Host, port.Port, "banner_scan_requested"),
+					ScanID: req.ScanID,
+					Type:   "banner_scan_requested",
+					IP:     hr.Host,
+					Port:   port.Port,
+				}
+				signalBatcher.Add(signal)
 			}
-
-			value, err := json.Marshal(msg)
-			if err != nil {
-				// log.Printf("marshal error: %v", err)
-				return
-			}
-
-			// fmt.Printf("[RESULT] %s -> %+v, ", hr.Host, hr.Ports)
-			ProduceResult(value)
-
 		},
 	}
 }
 
-func RunScan(req ScanRequest) {
+func RunScan(req ScanRequest, factBatcher *batch.Batch[kafka.Fact], signalBatcher *batch.Batch[kafka.Signal]) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	opts := buildOptions(req)
+	opts := buildOptions(req, factBatcher, signalBatcher)
 
 	r, err := runner.NewRunner(opts)
 	if err != nil {

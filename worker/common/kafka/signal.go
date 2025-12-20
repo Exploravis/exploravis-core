@@ -1,4 +1,4 @@
-package producer
+package kafka
 
 import (
 	"context"
@@ -8,32 +8,27 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
-var producer *kgo.Client
+var signal_producer *kgo.Client
 
-func InitProducer(brokers []string) {
+func InitSignalProducer(brokers []string, signalTopic string) {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
-		kgo.DefaultProduceTopic("not_enriched_finished_scan"),
+		kgo.DefaultProduceTopic(signalTopic),
 		kgo.RecordPartitioner(kgo.RoundRobinPartitioner()),
 	)
 	if err != nil {
 		log.Fatalf("failed to create results producer: %v", err)
 	}
 
-	producer = cl
+	signal_producer = cl
 	log.Println("Result producer initialized")
 }
 
-func CloseProducer() {
-	if producer != nil {
-		producer.Close()
-	}
-}
+func ProduceSignal(value []byte) {
 
-func ProduceResult(value []byte) {
-	if producer == nil {
+	if signal_producer == nil {
 		log.Printf("producer not initialized, dropping message")
 		return
 	}
@@ -42,9 +37,10 @@ func ProduceResult(value []byte) {
 		Value: value,
 	}
 
-	producer.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
+	signal_producer.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
 		if err != nil {
 			log.Printf("failed to deliver scan result: %v", err)
 		}
 	})
+	log.Printf("signal produced successfully")
 }

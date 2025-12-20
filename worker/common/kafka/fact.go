@@ -1,4 +1,4 @@
-package scanner
+package kafka
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 
 var producer *kgo.Client
 
-func InitProducer(brokers []string) {
+func InitProducer(brokers []string, topic string) {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.DialTimeout(5*time.Second),
 		kgo.ProduceRequestTimeout(5*time.Second),
-		kgo.DefaultProduceTopic("ip_scan_result"),
+		kgo.DefaultProduceTopic(topic),
 		kgo.RecordPartitioner(kgo.RoundRobinPartitioner()),
 	)
 	if err != nil {
@@ -49,4 +49,6 @@ func ProduceResult(value []byte) {
 			log.Printf("failed to deliver scan result: %v", err)
 		}
 	})
+
+	log.Printf("result produced successfully")
 }

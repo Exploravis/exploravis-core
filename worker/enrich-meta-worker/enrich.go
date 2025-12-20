@@ -185,25 +185,20 @@ func (e *Enricher) lookupIPMeta(ip string) (geo, asn map[string]any, hostname st
 	return geo, asn, hn
 }
 
-func (e *Enricher) enrichMessage(src ServiceScanResult) (ServiceScanResult, error) {
-	out := src
-	if out.Meta == nil {
-		out.Meta = map[string]any{}
-	}
+type IPEnrichment struct {
+	Geo      map[string]any `json:"geo,omitempty"`
+	ASN      map[string]any `json:"asn,omitempty"`
+	Hostname string         `json:"hostname,omitempty"`
+}
 
-	log.Printf("[PROCESS] Enriching %s:%d", out.IP, out.Port)
+func (e *Enricher) EnrichIP(ip string) (IPEnrichment, error) {
+	log.Printf("[PROCESS] Enriching IP %s", ip)
 
-	geo, asn, hn := e.lookupIPMeta(out.IP)
+	geo, asn, hn := e.lookupIPMeta(ip)
 
-	if len(geo) > 0 {
-		out.Meta["geo"] = geo
-	}
-	if len(asn) > 0 {
-		out.Meta["asn"] = asn
-	}
-	if hn != "" {
-		out.Meta["hostname"] = hn
-	}
-
-	return out, nil
+	return IPEnrichment{
+		Geo:      geo,
+		ASN:      asn,
+		Hostname: hn,
+	}, nil
 }

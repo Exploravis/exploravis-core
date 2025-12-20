@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -16,12 +17,13 @@ func scanSSH(t *zgrab2.ScanTarget) *ServiceScanResult {
 	ex := sshscan.Inspect(ipStr, portStr)
 
 	if ex.Fail {
-		return &ServiceScanResult{
-			IP:       ipStr,
-			Port:     int(t.Port),
-			Protocol: "SSH",
-			Meta:     map[string]any{"error": ex.FailReason},
-		}
+		log.Printf("ssh scan failed %s", ex.FailReason)
+		// return &ServiceScanResult{
+		// 	IP:       ipStr,
+		// 	Port:     int(t.Port),
+		// 	Protocol: "SSH",
+		// 	Meta:     map[string]any{"error": ex.FailReason},
+		// }
 	}
 
 	sshInfo := map[string]any{
@@ -38,7 +40,6 @@ func scanSSH(t *zgrab2.ScanTarget) *ServiceScanResult {
 		"languages_s2c":         ex.LanguagesS2C,
 	}
 
-	// Unified Shodan‑style banner text
 	banner := fmt.Sprintf(
 		"SSH %s kex=%v hostkey=%v enc_c2s=%v enc_s2c=%v mac_c2s=%v mac_s2c=%v",
 		ex.ProtocolVersion,
@@ -51,11 +52,10 @@ func scanSSH(t *zgrab2.ScanTarget) *ServiceScanResult {
 	)
 
 	return &ServiceScanResult{
-		IP:        ipStr,
-		Port:      int(t.Port),
 		Protocol:  "SSH",
 		Timestamp: time.Now().Unix(),
-		SSH:       sshInfo,
+		Info:      sshInfo,
 		Banner:    banner,
 	}
+
 }

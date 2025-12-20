@@ -35,47 +35,35 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsCfg)
 	if err != nil {
 		return &ServiceScanResult{
-			IP:       ipStr,
-			Port:     int(target.Port),
-			Protocol: "HTTPS",
-			Meta:     map[string]any{"error": err.Error()},
+			Protocol:  "HTTPS",
+			Timestamp: time.Now().Unix(),
+			Info:      map[string]any{"error": err.Error()},
 		}
 	}
 	defer conn.Close()
 
+	// Send GET request
 	req := fmt.Sprintf(
 		"GET / HTTP/1.1\r\nHost: %s\r\nUser-Agent: Exploravis-Scanner\r\nConnection: close\r\n\r\n",
 		ipStr,
 	)
-
 	_ = conn.SetWriteDeadline(time.Now().Add(writeTimeout))
 	_, _ = conn.Write([]byte(req))
 
+	// Read response
 	_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
 	raw, _ := io.ReadAll(io.LimitReader(conn, maxRead))
 	if len(raw) > maxStore {
 		raw = raw[:maxStore]
 	}
 
-	// -------------------------
 	// Parse HTTP response
-	// -------------------------
 	statusLine, headers, body := parseHTTPResponse(raw)
-
-	// -------------------------
-	// Extract HTML title
-	// -------------------------
 	title := extractTitle(body)
-
-	// -------------------------
-	// Body hash
-	// -------------------------
 	h := sha256.Sum256([]byte(body))
 	bodyHash := "sha256:" + hex.EncodeToString(h[:])
 
-	// -------------------------
-	// TLS Metadata
-	// -------------------------
+	// TLS metadata
 	state := conn.ConnectionState()
 	tlsInfo := map[string]any{
 		"version":             tlsVersionString(state.Version),
@@ -99,26 +87,18 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 		}
 	}
 
-	// -------------------------
-	// Build banner
-	// -------------------------
+	// Build unified banner
 	var banner strings.Builder
-	banner.WriteString(fmt.Sprintf("TLS: %s %s\n",
-		tlsInfo["version"], tlsInfo["cipher_suite"]))
-
+	banner.WriteString(fmt.Sprintf("TLS: %s %s\n", tlsInfo["version"], tlsInfo["cipher_suite"]))
 	if statusLine != "" {
 		banner.WriteString(statusLine + "\n")
 	}
-
 	for k, v := range headers {
-		banner.WriteString(k + ": " + v + "\n")
+		banner.WriteString(fmt.Sprintf("%s: %s\n", k, v))
 	}
-
 	banner.WriteString(body)
 
-	// -------------------------
-	// Structured HTTP object
-	// -------------------------
+	// Structured HTTP info
 	httpInfo := map[string]any{
 		"status_line":  statusLine,
 		"headers":      headers,
@@ -129,16 +109,15 @@ func scanHTTPS(target *zgrab2.ScanTarget) *ServiceScanResult {
 	}
 
 	return &ServiceScanResult{
-		IP:        ipStr,
-		Port:      int(target.Port),
 		Protocol:  "HTTPS",
 		Timestamp: time.Now().Unix(),
-		TLS:       tlsInfo,
-		HTTP:      httpInfo,
 		Banner:    banner.String(),
+		Info: map[string]any{
+			"http": httpInfo,
+			"tls":  tlsInfo,
+		},
 	}
 }
-
 func parseHTTPResponse(raw []byte) (string, map[string]string, string) {
 	s := string(raw)
 

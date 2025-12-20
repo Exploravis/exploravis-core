@@ -6,12 +6,12 @@ install-telepresence:
 connect: 
 	telepresence quit && telepresence connect 
 
-orch:
+api:
 	cd orchestrator && go run . 
-wrk:
+scanner:
 	cd worker/scanner-worker && go run main.go
 
-grb:
+banner:
 	cd worker/banner-worker && go run . 
 
 meta:
@@ -31,6 +31,20 @@ create-topics:
 	echo "Creating topic $$topic..."; \
 	kubectl exec -n kafka redpanda-0 -- rpk topic create $$topic || echo "$$topic already exists"; \
 	done
+
+ES_URL=http://elasticsearch-cluster-master.elasticsearch.svc:9200
+INDEX=scans-stats
+
+.PHONY: create-index
+create-index:
+	curl -X PUT "$(ES_URL)/$(INDEX)" \
+	     -H 'Content-Type: application/json' \
+	     -d @mapping/scans-stats-mapping.json
+
+.PHONY: reset-index
+reset-index:
+	curl -X DELETE "$(ES_URL)/$(INDEX)"
+	make create-index
 
 
 # If there was an unexpected issue with telepresence use this ma3reftx 3lax but it worked lol

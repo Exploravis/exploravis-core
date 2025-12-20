@@ -1,40 +1,23 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net"
-	"strconv"
+	"time"
 
-	// "github.com/projectdiscovery/naabu/v2/pkg/port"
-	"github.com/exploravis/worker/banner-worker/producer"
+	"github.com/exploravis/worker/common/batch"
+	"github.com/exploravis/worker/common/helpers"
+	"github.com/exploravis/worker/common/kafka"
 	"github.com/zmap/zgrab2"
 )
 
-func grabBanner(s ServiceScanRequest) ServiceScanResult {
-	portNum, err := strconv.Atoi(s.Port)
-	if err != nil {
-		return ServiceScanResult{
-			IP:     s.IP,
-			ScanID: s.ScanID,
-			Port:   0,
-			Meta:   map[string]any{"error": "invalid port"},
-		}
-	}
-
+func grabBanner(s ServiceScanRequest, factBatcher *batch.Batch[kafka.Fact]) *ServiceScanResult {
+	portNum := s.Port
 	target := &zgrab2.ScanTarget{
 		IP:   net.ParseIP(s.IP),
 		Port: uint(portNum),
 	}
-
-	if target.IP == nil {
-		return ServiceScanResult{
-			IP:     s.IP,
-			ScanID: s.ScanID,
-			Port:   portNum,
-			Meta:   map[string]any{"error": "invalid IP format"},
-		}
-	}
+	log.Printf("grabbing banner for: %s:%d", s.IP, s.Port)
 
 	var result *ServiceScanResult
 
@@ -60,29 +43,21 @@ func grabBanner(s ServiceScanRequest) ServiceScanResult {
 
 	// this shouldn't happen
 	if result == nil {
-		return ServiceScanResult{
-			IP:     s.IP,
-			ScanID: s.ScanID,
-			Port:   portNum,
-			Meta:   map[string]any{"error": "scan failed or timed out"},
-		}
+		log.Printf("resturned nil")
+		return nil
+		// todo
 	}
 
-	result.ScanID = s.ScanID
-	b, err := json.MarshalIndent(result, "", " ")
-	if err != nil {
-		log.Println("marshal error:", err)
-	} else {
-		log.Println("==========================")
-		log.Println(string(b))
+	fact := kafka.Fact{
+		FactType:   "banner_scan",
+		ScanID:     s.ScanID,
+		IP:         s.IP,
+		Port:       s.Port,
+		Payload:    helpers.StructToMap(result),
+		ObservedAt: time.Now(),
+		Source:     "banner-worker",
 	}
+	factBatcher.Add(fact)
 
-	value, err := json.Marshal(result)
-	if err != nil {
-		log.Printf("marshal error: %v", err)
-		return ServiceScanResult{}
-	}
-	producer.ProduceResult(value)
-
-	return *result
+	return result
 }

@@ -1,0 +1,117 @@
+{
+  "mappings": {
+    "properties": {
+      "banner_scan": {
+        "properties": {
+          "banner": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          },
+          "info": {
+            "properties": {
+              "auth_ssl_resp": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "auth_tls_resp": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "body_hash": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "body_preview": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "bytes_read": { "type": "long" },
+              "content_length": { "type": "long" },
+              "headers": { "properties": { /* your current headers mapping */ } },
+              "http": { "properties": { /* your current http mapping */ } },
+              "implicit_tls": { "type": "boolean" },
+              "raw_banner": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "status_code": { "type": "long" },
+              "tags": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "timeout": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "title": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              },
+              "tls": { "properties": { /* your current tls mapping */ } },
+              "version": {
+                "type": "text",
+                "fields": {
+                  "keyword": { "type": "keyword", "ignore_above": 256 }
+                }
+              }
+            }
+          },
+          "protocol": {
+            "type": "text",
+            "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+          },
+          "timestamp": { "type": "long" }
+        }
+      },
+      "ip": { "type": "ip" },
+      "ip_enrichment": {
+        "properties": {
+          "asn": {
+            "properties": {
+              "number": { "type": "long" },
+              "org": {
+                "type": "text",
+                "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+              }
+            }
+          },
+          "geo": {
+            "properties": {
+              "city": {
+                "type": "text",
+                "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+              },
+              "country": {
+                "type": "text",
+                "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+              },
+              "location": { "type": "geo_point" }
+            }
+          }
+        }
+      },
+      "port": { "type": "long" }
+    }
+  }
+}

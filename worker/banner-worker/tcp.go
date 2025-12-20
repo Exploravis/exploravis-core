@@ -11,64 +11,40 @@ import (
 const maxReadBytes = 4096
 
 func scanRawTCP(t *zgrab2.ScanTarget) *ServiceScanResult {
-	const (
-		readTimeout  = 2 * time.Second
-		maxReadBytes = 4096
-		maxStore     = 512
-	)
+	if t == nil || t.IP == nil {
+		return nil
+	}
 
 	ip := t.IP.String()
 	addr := net.JoinHostPort(ip, fmt.Sprintf("%d", t.Port))
 
 	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
 	if err != nil {
-		return &ServiceScanResult{
-			IP:       ip,
-			Port:     int(t.Port),
-			Protocol: "TCP",
-			Meta:     map[string]any{"error": err.Error()},
-			Banner:   "",
-		}
+		return nil
 	}
 	defer conn.Close()
 
-	_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
+	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 
 	buf := make([]byte, maxReadBytes)
-	n, _ := conn.Read(buf)
-
-	if n <= 0 {
-		return &ServiceScanResult{
-			IP:        ip,
-			Port:      int(t.Port),
-			Protocol:  "TCP",
-			Timestamp: time.Now().Unix(),
-			Banner:    "",
-			Meta: map[string]any{
-				"bytes_read": n,
-				"timeout":    readTimeout.String(),
-			},
-		}
+	n, err := conn.Read(buf)
+	if err != nil || n <= 0 {
+		return nil
 	}
 
 	raw := buf[:n]
-
 	banner := sanitizeBanner(raw)
 
-	if len(banner) > maxStore {
-		banner = banner[:maxStore]
+	if len(banner) > 512 {
+		banner = banner[:512]
 	}
 
 	return &ServiceScanResult{
-		IP:        ip,
-		Port:      int(t.Port),
 		Protocol:  "TCP",
 		Timestamp: time.Now().Unix(),
 		Banner:    banner,
-		RawTCP:    banner,
-		Meta: map[string]any{
+		Info: map[string]any{
 			"bytes_read": n,
-			"timeout":    readTimeout.String(),
 		},
 	}
 }

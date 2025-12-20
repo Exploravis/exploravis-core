@@ -114,11 +114,9 @@ func scanHTTP(t *zgrab2.ScanTarget) *ServiceScanResult {
 	}
 
 	return &ServiceScanResult{
-		IP:        t.IP.String(),
-		Port:      int(t.Port),
 		Protocol:  "HTTP",
 		Timestamp: time.Now().Unix(),
 		Banner:    bannerStr,
-		HTTP:      httpInfo,
+		Info:      httpInfo,
 	}
 }
